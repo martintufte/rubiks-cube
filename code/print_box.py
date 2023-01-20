@@ -1,7 +1,5 @@
 import sys
-from reconstructions import reconstructions
 from utilities import sequence_to_latex, steps_to_latex, get_cube_state, permutations
-
 
 def split_reconstruction(recon):
   recon = recon.strip()
@@ -18,7 +16,6 @@ def split_reconstruction(recon):
     return title, scramble, lines, None
   return title, scramble, None, None
 
-
 def box_to_latex(title, scramble, steps=None, solution=None, draw_func="DrawCube"):
   latex_str = "\\bigskip\n\\begin{tabular}{|p{0.968\\linewidth}|}\n\\hline\n\\textbf{" + title + """}\\\\\n\\hline
 Scramble: """ + sequence_to_latex(scramble) + "\\\\\n\\hline"
@@ -31,7 +28,14 @@ Scramble: """ + sequence_to_latex(scramble) + "\\\\\n\\hline"
 
   return latex_str
 
-
+# import reconstructions
+if int(sys.argv[3])==0:
+    from reconstructions_3x3 import reconstructions
+elif int(sys.argv[3])==1:
+    from reconstructions_FMC import reconstructions
+else:
+    from reconstructions_3x3 import reconstructions
+    
 recon = reconstructions[int(sys.argv[1])]
 draw_func = "DrawCube" if int(sys.argv[2]) else "DrawSimpleCube"
 title, scr, steps, sol = split_reconstruction(recon)

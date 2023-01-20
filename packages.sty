@@ -176,8 +176,87 @@
 \StandardColorScheme    % \StandardColorScheme, \JapaneseColorScheme
 
 
+%%% DRAW FUNCTIONS %%%
 
 \newcommand{\DrawCube}[2]{
+ % #1: size of cube, #2: side length of regular 3x3
+ % Side length of nxn-cube is given as 1 + 1/25*(n-3)
+\begin{tikzpicture}[
+    scale = 1+1/25*(#1-3),
+    % used to draw 3D-looking smooth corners
+    declare function={
+        f(\x,\dx,\u,\v) = \x + ((1-sqrt(1-\u))*sqrt(\v) + sqrt(1-\u))*\dx;   % parameterized x-coordinate
+        g(\y,\dy,\u,\v) = \y + ((1-sqrt(1-\u))*sqrt(1-\v) + sqrt(1-\u))*\dy; % parameterized y-coordinate
+        h(\z,\dz,\u,\v) = \z + (sqrt(\u))*\dz;                               % parameterized z-coordinate
+        UIndex(\i,\j) = (\j)+\Csize*(\Csize-1-\i);                           % index of up face
+        FIndex(\i,\j) = (\i)+\Csize*(\Csize-1-\j)+\Csize^2;                  % index of front face
+        RIndex(\i,\j) = (\i)+\Csize*(\Csize-1-\j)+2*\Csize^2;                % index of right face
+    }
+ ]
+ % size of cube, sidelength, radius of pieces
+ \pgfmathsetmacro{\Csize}{#1}
+ \pgfmathsetmacro{\Clength}{#2}
+ \pgfmathsetmacro{\Cpiecelength}{\Clength/\Csize}
+ \pgfmathsetmacro{\Cradius}{\Cpiecelength * 0.2}
+ \pgfmathsetmacro{\limit}{\Csize-1}
+ 
+ % Short notations
+ \pgfmathsetmacro{\s}{\Csize}
+ \pgfmathsetmacro{\l}{\Clength}
+ \pgfmathsetmacro{\r}{\Cradius}
+
+ % Perspective of pdf-box
+ \pgfmathsetmacro{\AngleOne}{60} % rotation from z-axis to front view [0, 90]
+ \pgfmathsetmacro{\AngleTwo}{45} % rotation around z-axis [0, 90]. 0: Front, 90: Right
+ \tdplotsetmaincoords{\AngleOne}{\AngleTwo}
+
+ % Vindow size
+ %\pgfmathsetmacro{\VindowLength}{1.4142} %* sin(3.1415/180 * (45 + \AngleTwo))}
+ %\pgfmathsetmacro{\VindowHeight}{1.4142 * sin(3.1415/180 * (45 + \AngleTwo))}
+ \pgfmathsetmacro{\Padding}{0.025}
+ \clip (-\Padding, -0.7*\Clength) rectangle (1.4142*\Clength + \Padding, 1.35*\Clength);
+ 
+ \begin{scope}[tdplot_main_coords]
+    % Draw smoothed corners
+    \foreach \u in {0.0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0}{
+        \draw[thick,black] plot[variable=\v,samples=9,smooth,domain=0:1] ({f(\r,-\r,\u,\v)},{g(\r,-\r,\u,\v)},{h(\r,-\r,\u,\v)});
+        \draw[thick,black] plot[variable=\v,samples=9,smooth,domain=0:1] ({f(\l-\r,\r,\u,\v)},{g(\r,-\r,\u,\v)},{h(\r,-\r,\u,\v)});
+        \draw[thick,black] plot[variable=\v,samples=9,smooth,domain=0:1] ({f(\r,-\r,\u,\v)},{g(\l-\r,\r,\u,\v)},{h(\r,-\r,\u,\v)});
+        \draw[thick,black] plot[variable=\v,samples=9,smooth,domain=0:1] ({f(\r,-\r,\u,\v)},{g(\r,-\r,\u,\v)},{h(\l-\r,\r,\u,\v)});
+        \draw[thick,black] plot[variable=\v,samples=9,smooth,domain=0:1] ({f(\l-\r,\r,\u,\v)},{g(\l-\r,\r,\u,\v)},{h(\r,-\r,\u,\v)});
+        \draw[thick,black] plot[variable=\v,samples=9,smooth,domain=0:1] ({f(\l-\r,\r,\u,\v)},{g(\r,-\r,\u,\v)},{h(\l-\r,\r,\u,\v)});
+        \draw[thick,black] plot[variable=\v,samples=9,smooth,domain=0:1] ({f(\r,-\r,\u,\v)},{g(\l-\r,\r,\u,\v)},{h(\l-\r,\r,\u,\v)});
+        \draw[thick,black] plot[variable=\v,samples=9,smooth,domain=0:1] ({f(\l-\r,\r,\u,\v)},{g(\l-\r,\r,\u,\v)},{h(\l-\r,\r,\u,\v)});
+    }
+ 
+    % Draw background for visible faces
+    \filldraw [canvas is xz plane at y=0] (0, \Cradius) rectangle (\l, \l-\Cradius); % Front
+    \filldraw [canvas is xz plane at y=0] (\Cradius, 0) rectangle (\l-\Cradius, \l); % Front
+    \filldraw [canvas is yz plane at x=\l] (0, \Cradius) rectangle (\l, \l-\Cradius); % Up
+    \filldraw [canvas is yz plane at x=\l] (\Cradius, 0) rectangle (\l-\Cradius, \l); % Up
+    \filldraw [canvas is xy plane at z=\l] (0, \Cradius) rectangle (\l, \l-\Cradius); % Right
+    \filldraw [canvas is xy plane at z=\l] (\Cradius, 0) rectangle (\l-\Cradius, \l); % Right
+
+    % Draw visible faces
+    \foreach \i in {0, 1, ..., \limit}{
+        \foreach \j in {0, 1, ..., \limit}{
+        % Up
+        \pgfmathsetmacro{\upcolor}{\myarray[UIndex(\i,\j)]}
+        \draw [thick, canvas is yx plane at z=\l, shift={(\i*\Cpiecelength, \j*\Cpiecelength)}, fill=\upcolor] (\Cradius, 0) -- ({\Cpiecelength-\Cradius},0) arc (-90:0:\Cradius) -- (\Cpiecelength, {\Cpiecelength-\Cradius}) arc (0:90:\Cradius) -- (\Cradius, \Cpiecelength) arc (90:180:\Cradius) -- (0, \Cradius) arc (180:270:\Cradius) -- cycle;
+        % Front
+        \pgfmathsetmacro{\frontcolor}{\myarray[FIndex(\i,\j)]}
+        \draw [thick, canvas is xz plane at y=0, shift={(\i*\Cpiecelength, \j*\Cpiecelength)}, fill=\frontcolor] (\Cradius, 0) -- ({\Cpiecelength-\Cradius},0) arc (-90:0:\Cradius) -- (\Cpiecelength, {\Cpiecelength-\Cradius}) arc (0:90:\Cradius) -- (\Cradius, \Cpiecelength) arc (90:180:\Cradius) -- (0, \Cradius) arc (180:270:\Cradius) -- cycle;
+        % Right
+        \pgfmathsetmacro{\rightcolor}{\myarray[RIndex(\i,\j)]}
+        \draw [thick, canvas is yz plane at x=\l, shift={(\i*\Cpiecelength, \j*\Cpiecelength)}, fill=\rightcolor] (\Cradius, 0) -- ({\Cpiecelength-\Cradius},0) arc (-90:0:\Cradius) -- (\Cpiecelength, {\Cpiecelength-\Cradius}) arc (0:90:\Cradius) -- (\Cradius, \Cpiecelength) arc (90:180:\Cradius) -- (0, \Cradius) arc (180:270:\Cradius) -- cycle;
+        }
+    }
+ \end{scope}
+\end{tikzpicture}}
+
+
+% Similar to \DrawCube, but less detailed
+\newcommand{\DrawCubeIcon}[2]{
  % #1: size of cube, #2: side length of regular 3x3
  % Side length of nxn-cube is given as 1 + 1/25*(n-3)
 \begin{tikzpicture}[
@@ -212,20 +291,20 @@
  % Vindow size
  %\pgfmathsetmacro{\VindowLength}{1.4142} %* sin(3.1415/180 * (45 + \AngleTwo))}
  %\pgfmathsetmacro{\VindowHeight}{1.4142 * sin(3.1415/180 * (45 + \AngleTwo))}
- \pgfmathsetmacro{\Padding}{0.025}
- \clip (-\Padding, -0.7*\Clength) rectangle (1.4142*\Clength + \Padding, 1.35*\Clength);
+ %\pgfmathsetmacro{\Padding}{0.025}
+ %\clip (-\Padding, -0.7*\Clength) rectangle (\VindowLength*\Clength + \Padding, 1.35*\Clength);
  
  \begin{scope}[tdplot_main_coords]
     % Draw smoothed corners
-    \foreach \u in {0.0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0}{
-        \draw[thick,black] plot[variable=\v,samples=9,smooth,domain=0:1] ({f(\r,-\r,\u,\v)},{g(\r,-\r,\u,\v)},{h(\r,-\r,\u,\v)});
-        \draw[thick,black] plot[variable=\v,samples=9,smooth,domain=0:1] ({f(\l-\r,\r,\u,\v)},{g(\r,-\r,\u,\v)},{h(\r,-\r,\u,\v)});
-        \draw[thick,black] plot[variable=\v,samples=9,smooth,domain=0:1] ({f(\r,-\r,\u,\v)},{g(\l-\r,\r,\u,\v)},{h(\r,-\r,\u,\v)});
-        \draw[thick,black] plot[variable=\v,samples=9,smooth,domain=0:1] ({f(\r,-\r,\u,\v)},{g(\r,-\r,\u,\v)},{h(\l-\r,\r,\u,\v)});
-        \draw[thick,black] plot[variable=\v,samples=9,smooth,domain=0:1] ({f(\l-\r,\r,\u,\v)},{g(\l-\r,\r,\u,\v)},{h(\r,-\r,\u,\v)});
-        \draw[thick,black] plot[variable=\v,samples=9,smooth,domain=0:1] ({f(\l-\r,\r,\u,\v)},{g(\r,-\r,\u,\v)},{h(\l-\r,\r,\u,\v)});
-        \draw[thick,black] plot[variable=\v,samples=9,smooth,domain=0:1] ({f(\r,-\r,\u,\v)},{g(\l-\r,\r,\u,\v)},{h(\l-\r,\r,\u,\v)});
-        \draw[thick,black] plot[variable=\v,samples=9,smooth,domain=0:1] ({f(\l-\r,\r,\u,\v)},{g(\l-\r,\r,\u,\v)},{h(\l-\r,\r,\u,\v)});
+    \foreach \u in {0.0, 0.25, 0.5, 0.75, 1.0}{
+        \draw[thick,black] plot[variable=\v,samples=5,smooth,domain=0:1] ({f(\r,-\r,\u,\v)},{g(\r,-\r,\u,\v)},{h(\r,-\r,\u,\v)});
+        \draw[thick,black] plot[variable=\v,samples=5,smooth,domain=0:1] ({f(\l-\r,\r,\u,\v)},{g(\r,-\r,\u,\v)},{h(\r,-\r,\u,\v)});
+        \draw[thick,black] plot[variable=\v,samples=5,smooth,domain=0:1] ({f(\r,-\r,\u,\v)},{g(\l-\r,\r,\u,\v)},{h(\r,-\r,\u,\v)});
+        \draw[thick,black] plot[variable=\v,samples=5,smooth,domain=0:1] ({f(\r,-\r,\u,\v)},{g(\r,-\r,\u,\v)},{h(\l-\r,\r,\u,\v)});
+        \draw[thick,black] plot[variable=\v,samples=5,smooth,domain=0:1] ({f(\l-\r,\r,\u,\v)},{g(\l-\r,\r,\u,\v)},{h(\r,-\r,\u,\v)});
+        \draw[thick,black] plot[variable=\v,samples=5,smooth,domain=0:1] ({f(\l-\r,\r,\u,\v)},{g(\r,-\r,\u,\v)},{h(\l-\r,\r,\u,\v)});
+        \draw[thick,black] plot[variable=\v,samples=5,smooth,domain=0:1] ({f(\r,-\r,\u,\v)},{g(\l-\r,\r,\u,\v)},{h(\l-\r,\r,\u,\v)});
+        \draw[thick,black] plot[variable=\v,samples=5,smooth,domain=0:1] ({f(\l-\r,\r,\u,\v)},{g(\l-\r,\r,\u,\v)},{h(\l-\r,\r,\u,\v)});
     }
  
     % Draw background for visible faces
@@ -345,94 +424,25 @@
     \end{tikzpicture}
 }
 
-% Similar to \DrawCube, but less detailed
-\newcommand{\DrawCubeIcon}[2]{
- % #1: size of cube, #2: side length of regular 3x3
- % Side length of nxn-cube is given as 1 + 1/25*(n-3)
-\begin{tikzpicture}[
-    scale = 1+1/25*(#1-3),
-    % used to draw 3D-looking smooth corners
-    declare function={
-        f(\x,\dx,\u,\v) = \x + ((1-sqrt(1-\u))*sqrt(\v) + sqrt(1-\u))*\dx;   % parameterized x-coordinate
-        g(\y,\dy,\u,\v) = \y + ((1-sqrt(1-\u))*sqrt(1-\v) + sqrt(1-\u))*\dy; % parameterized y-coordinate
-        h(\z,\dz,\u,\v) = \z + (sqrt(\u))*\dz;                               % parameterized z-coordinate
-        UIndex(\i,\j) = (\j)+\Csize*(\Csize-1-\i);                           % index of up face
-        FIndex(\i,\j) = (\i)+\Csize*(\Csize-1-\j)+\Csize^2;                  % index of front face
-        RIndex(\i,\j) = (\i)+\Csize*(\Csize-1-\j)+2*\Csize^2;                % index of right face
-    }
- ]
- % size of cube, sidelength, radius of pieces
- \pgfmathsetmacro{\Csize}{#1}
- \pgfmathsetmacro{\Clength}{#2}
- \pgfmathsetmacro{\Cpiecelength}{\Clength/\Csize}
- \pgfmathsetmacro{\Cradius}{\Cpiecelength * 0.2}
- \pgfmathsetmacro{\limit}{\Csize-1}
- 
- % Short notations
- \pgfmathsetmacro{\s}{\Csize}
- \pgfmathsetmacro{\l}{\Clength}
- \pgfmathsetmacro{\r}{\Cradius}
-
- % Size of pdf-box and perspective
- \pgfmathsetmacro{\AngleOne}{60} % rotation from z-axis to front view [0, 90]
- \pgfmathsetmacro{\AngleTwo}{45} % rotation around z-axis [0, 90]. 0: Front, 90: Right
- \tdplotsetmaincoords{\AngleOne}{\AngleTwo}
-
- % Vindow size
- %\pgfmathsetmacro{\VindowLength}{1.4142} %* sin(3.1415/180 * (45 + \AngleTwo))}
- %\pgfmathsetmacro{\VindowHeight}{1.4142 * sin(3.1415/180 * (45 + \AngleTwo))}
- %\pgfmathsetmacro{\Padding}{0.025}
- %\clip (-\Padding, -0.7*\Clength) rectangle (\VindowLength*\Clength + \Padding, 1.35*\Clength);
- 
- \begin{scope}[tdplot_main_coords]
-    % Draw smoothed corners
-    \foreach \u in {0.0, 0.25, 0.5, 0.75, 1.0}{
-        \draw[thick,black] plot[variable=\v,samples=5,smooth,domain=0:1] ({f(\r,-\r,\u,\v)},{g(\r,-\r,\u,\v)},{h(\r,-\r,\u,\v)});
-        \draw[thick,black] plot[variable=\v,samples=5,smooth,domain=0:1] ({f(\l-\r,\r,\u,\v)},{g(\r,-\r,\u,\v)},{h(\r,-\r,\u,\v)});
-        \draw[thick,black] plot[variable=\v,samples=5,smooth,domain=0:1] ({f(\r,-\r,\u,\v)},{g(\l-\r,\r,\u,\v)},{h(\r,-\r,\u,\v)});
-        \draw[thick,black] plot[variable=\v,samples=5,smooth,domain=0:1] ({f(\r,-\r,\u,\v)},{g(\r,-\r,\u,\v)},{h(\l-\r,\r,\u,\v)});
-        \draw[thick,black] plot[variable=\v,samples=5,smooth,domain=0:1] ({f(\l-\r,\r,\u,\v)},{g(\l-\r,\r,\u,\v)},{h(\r,-\r,\u,\v)});
-        \draw[thick,black] plot[variable=\v,samples=5,smooth,domain=0:1] ({f(\l-\r,\r,\u,\v)},{g(\r,-\r,\u,\v)},{h(\l-\r,\r,\u,\v)});
-        \draw[thick,black] plot[variable=\v,samples=5,smooth,domain=0:1] ({f(\r,-\r,\u,\v)},{g(\l-\r,\r,\u,\v)},{h(\l-\r,\r,\u,\v)});
-        \draw[thick,black] plot[variable=\v,samples=5,smooth,domain=0:1] ({f(\l-\r,\r,\u,\v)},{g(\l-\r,\r,\u,\v)},{h(\l-\r,\r,\u,\v)});
-    }
- 
-    % Draw background for visible faces
-    \filldraw [canvas is xz plane at y=0] (0, \Cradius) rectangle (\l, \l-\Cradius); % Front
-    \filldraw [canvas is xz plane at y=0] (\Cradius, 0) rectangle (\l-\Cradius, \l); % Front
-    \filldraw [canvas is yz plane at x=\l] (0, \Cradius) rectangle (\l, \l-\Cradius); % Up
-    \filldraw [canvas is yz plane at x=\l] (\Cradius, 0) rectangle (\l-\Cradius, \l); % Up
-    \filldraw [canvas is xy plane at z=\l] (0, \Cradius) rectangle (\l, \l-\Cradius); % Right
-    \filldraw [canvas is xy plane at z=\l] (\Cradius, 0) rectangle (\l-\Cradius, \l); % Right
-
-    % Draw visible faces
-    \foreach \i in {0, 1, ..., \limit}{
-        \foreach \j in {0, 1, ..., \limit}{
-        % Up
-        \pgfmathsetmacro{\upcolor}{\myarray[UIndex(\i,\j)]}
-        \draw [thick, canvas is yx plane at z=\l, shift={(\i*\Cpiecelength, \j*\Cpiecelength)}, fill=\upcolor] (\Cradius, 0) -- ({\Cpiecelength-\Cradius},0) arc (-90:0:\Cradius) -- (\Cpiecelength, {\Cpiecelength-\Cradius}) arc (0:90:\Cradius) -- (\Cradius, \Cpiecelength) arc (90:180:\Cradius) -- (0, \Cradius) arc (180:270:\Cradius) -- cycle;
-        % Front
-        \pgfmathsetmacro{\frontcolor}{\myarray[FIndex(\i,\j)]}
-        \draw [thick, canvas is xz plane at y=0, shift={(\i*\Cpiecelength, \j*\Cpiecelength)}, fill=\frontcolor] (\Cradius, 0) -- ({\Cpiecelength-\Cradius},0) arc (-90:0:\Cradius) -- (\Cpiecelength, {\Cpiecelength-\Cradius}) arc (0:90:\Cradius) -- (\Cradius, \Cpiecelength) arc (90:180:\Cradius) -- (0, \Cradius) arc (180:270:\Cradius) -- cycle;
-        % Right
-        \pgfmathsetmacro{\rightcolor}{\myarray[RIndex(\i,\j)]}
-        \draw [thick, canvas is yz plane at x=\l, shift={(\i*\Cpiecelength, \j*\Cpiecelength)}, fill=\rightcolor] (\Cradius, 0) -- ({\Cpiecelength-\Cradius},0) arc (-90:0:\Cradius) -- (\Cpiecelength, {\Cpiecelength-\Cradius}) arc (0:90:\Cradius) -- (\Cradius, \Cpiecelength) arc (90:180:\Cradius) -- (0, \Cradius) arc (180:270:\Cradius) -- cycle;
-        }
-    }
- \end{scope}
-\end{tikzpicture}}
-
-
-
 % Command for drawing the reconstruction
 \newcommand{\Reconstruct}[1]{
   \ifhighquality {
-    \input{|python code/print_reconstruction.py #1 1}
+    \input{|python code/print_box.py #1 1 0}
   } \else {
-    \input{|python code/print_reconstruction.py #1 0}
+    \input{|python code/print_box.py #1 0 0}
   }
   \fi
 }
+
+\newcommand{\ReconstructFMC}[1]{
+  \ifhighquality {
+    \input{|python code/print_box.py #1 1 1}
+  } \else {
+    \input{|python code/print_box.py #1 0 1}
+  }
+  \fi
+}
+
 
 % Replace substring command
 \usepackage{listofitems}
@@ -446,12 +456,7 @@
 
 \newcommand{\seq}[1]{\texttt{\replace{#1}{'}{\p}}}
 
-\newcommand{\SetOLL}[1]{
-    \input{|python code/set_OLL.py #1}
-}
-
-
-
+% Rubiks cube stored as '\myarray'
 \newcommand{\FrontSide}[9]{\def\myarrayF{#1,#2,#3,#4,#5,#6,#7,#8,#9}}
 \newcommand{\RightSide}[9]{\def\myarrayR{#1,#2,#3,#4,#5,#6,#7,#8,#9}}
 \newcommand{\UpSide}[9]{\def\myarrayU{#1,#2,#3,#4,#5,#6,#7,#8,#9}}
