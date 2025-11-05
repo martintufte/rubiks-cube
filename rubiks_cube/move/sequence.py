@@ -138,8 +138,7 @@ class MoveSequence(Sequence[str]):
         return reversed(self.moves)
 
     def __invert__(self) -> MoveSequence:
-        inverse_sequence = MoveSequence(moves=[invert_move(move) for move in reversed(self.moves)])
-        return inverse_sequence
+        return MoveSequence(moves=[invert_move(move) for move in reversed(self.moves)])
 
     def apply(self, /, fn: Callable[[str], str | Sequence[str]]) -> None:
         """Apply a function to each move in the sequence. Keep decorations.
