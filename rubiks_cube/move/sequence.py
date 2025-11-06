@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import itertools
 from collections.abc import Callable
 from collections.abc import Iterator
 from collections.abc import Sequence
@@ -155,9 +154,7 @@ class MoveSequence(Sequence[str]):
             return [decorate_move(fn_move, niss=niss, slash=slash) for fn_move in new_moves]
 
         self.moves = [
-            decorated_move
-            for move in self.moves
-            for decorated_move in decorated_fn(move)
+            decorated_move for move in self.moves for decorated_move in decorated_fn(move)
         ]
 
 
