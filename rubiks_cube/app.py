@@ -18,7 +18,7 @@ from rubiks_cube.parsing import parse_steps
 
 st.set_page_config(
     page_title="Spruce - Rubik's Cube Solver",
-    page_icon=DATA_DIR / "favicon.png",
+    page_icon=str(DATA_DIR / "favicon.png"),
 )
 
 
@@ -38,37 +38,36 @@ DEFAULT_SESSION: Final[dict[str, Any]] = {
     "page": COOKIE_MANAGER.get("page") or "autotagger",
 }
 for key, default in DEFAULT_SESSION.items():
-    if key not in st.session_state:
-        setattr(st.session_state, key, default)
+    st.session_state.setdefault(key, default)
+
+ROUTES: Final[dict[str, partial[None]]] = {
+    "autotagger": partial(
+        autotagger,
+        session=st.session_state,
+        cookie_manager=COOKIE_MANAGER,
+    ),
+    "solver": partial(
+        solver,
+        session=st.session_state,
+        cookie_manager=COOKIE_MANAGER,
+    ),
+    "beam-search": partial(
+        beam_search,
+        session=st.session_state,
+        cookie_manager=COOKIE_MANAGER,
+    ),
+    "docs": partial(
+        docs,
+        session=st.session_state,
+        cookie_manager=COOKIE_MANAGER,
+    ),
+}
 
 
 @st.fragment
 def get_router() -> stx.Router:
     """Return the router for the app."""
-    return stx.Router(
-        {
-            "/autotagger": partial(
-                autotagger,
-                session=st.session_state,
-                cookie_manager=COOKIE_MANAGER,
-            ),
-            "/solver": partial(
-                solver,
-                session=st.session_state,
-                cookie_manager=COOKIE_MANAGER,
-            ),
-            "/beam-search": partial(
-                beam_search,
-                session=st.session_state,
-                cookie_manager=COOKIE_MANAGER,
-            ),
-            "/docs": partial(
-                docs,
-                session=st.session_state,
-                cookie_manager=COOKIE_MANAGER,
-            ),
-        }
-    )
+    return stx.Router(ROUTES)
 
 
 def router() -> None:
