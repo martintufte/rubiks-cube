@@ -20,6 +20,7 @@ This is a page to track what is being worked on, ideas and finished work
   * [] Tool for finding insertions? (E.g. by Baiqiang: [git](https://github.com/Baiqiang/333.fm))
 
 * Done/Abandoned
+  * [DONE] Fix routing bug in app.py and add unit tests for router
   * [DONE] Finalize unit tests for autotagging
   * [DONE] Finalize unit tests for move sequence, generator and algorithms
   * [DONE] Use the Schreier-Sims algorithm to find out if a state is solvable (too slow)
