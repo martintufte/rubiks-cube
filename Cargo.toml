@@ -1,0 +1,13 @@
+[package]
+name = "rust"
+version = "0.1.0"
+authors = ["Martin Gudahl Tufte <martingudahltufte@hotmail.com>"]
+edition = "2021"
+publish = false
+
+[lib]
+crate-type = ["cdylib"]
+doctest = false
+
+[dependencies]
+pyo3 = { version = "0.21.2", features = ["extension-module", "pyi"] }
