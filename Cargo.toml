@@ -10,4 +10,4 @@ crate-type = ["cdylib"]
 doctest = false
 
 [dependencies]
-pyo3 = { version = "0.21.2", features = ["extension-module", "pyi"] }
+pyo3 = { version = "0.21.2", features = ["extension-module"] }

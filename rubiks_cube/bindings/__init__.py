@@ -1,6 +1,7 @@
 from timeit import default_timer as timer
 
 import numpy as np
+from tqdm import tqdm
 
 from rubiks_cube.bindings.rust import add_one as add_one_rust
 from rubiks_cube.bindings.rust import bubble_sort as bubble_sort_rust
@@ -84,19 +85,17 @@ def benchmark_bubble_sort() -> None:
     python_times = []
     rust_times = []
 
-    for arr in arrs:
+    for arr in tqdm(arrs):
         t0 = timer()
         _b = bubble_sort_np(arr)
         py_time = timer() - t0
         python_times.append(py_time)
-        print(py_time)
 
         # Rust
         t0 = timer()
         _b2 = bubble_sort_rust(arr)
         rust_time = timer() - t0
         rust_times.append(rust_time)
-        print(rust_time)
 
     # Print speedup
     speedup = [
