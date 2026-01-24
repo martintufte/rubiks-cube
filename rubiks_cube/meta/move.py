@@ -17,7 +17,8 @@ class MoveMeta:
 
     cube_size: int
     permutations: dict[str, CubePermutation]
-    identity_bytes: bytes
+
+    # Properties
     rotation_moves: set[str]
     legal_moves: set[str]
     compose: dict[tuple[str, str], str]
@@ -56,7 +57,6 @@ class MoveMeta:
         return cls(
             cube_size=cube_size,
             permutations=permutations,
-            identity_bytes=identity_bytes,
             rotation_moves=rotation_moves,
             legal_moves=legal_moves,
             compose=compose,
