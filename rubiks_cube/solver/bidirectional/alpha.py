@@ -1020,7 +1020,7 @@ def bidirectional_solver_v6(
                     # Check for bridges to normal frontier
                     if new_key in normal_frontier:
                         norm_candidates = [
-                            *normal_frontier[new_key][1],
+                            normal_frontier[new_key][1],
                             *alternative_normal_paths.get(new_key, []),
                         ]
                         for norm_moves in norm_candidates:
