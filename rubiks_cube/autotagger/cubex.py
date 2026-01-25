@@ -241,46 +241,46 @@ def get_cubexes(cube_size: int = CUBE_SIZE) -> dict[Goal, Cubex]:
     t = timeit.default_timer()
     cubexes: dict[Goal, Cubex] = {}
 
-    moves: str
+    moves: list[str]
     symmetry: Symmetry | None
     solved_tags_discard = {
-        Goal.cp_layer: ("M' S Dw", Symmetry.up),
-        Goal.ep_layer: ("M2 D2 F2 B2 Dw", Symmetry.up),
-        Goal.none: ("x y", None),
+        Goal.cp_layer: (["M'", "S", "Dw"], Symmetry.up),
+        Goal.ep_layer: (["M2", "D2", "F2", "B2", "Dw"], Symmetry.up),
+        Goal.none: (["x", "y"], None),
     }
     for pattern, (moves, symmetry) in solved_tags_discard.items():
         cubexes[pattern] = Cubex.from_settings(
             name=pattern.value,
-            solved_sequence=MoveSequence.from_str(moves),
+            solved_sequence=MoveSequence(moves),
             symmetry=symmetry,
             cube_size=cube_size,
             keep=False,
         )
 
     solved_tags = {
-        Goal.layer: ("Dw", Symmetry.up),
-        Goal.cross: ("R L U2 R2 L2 U2 R L U", Symmetry.down),
-        Goal.f2l: ("U", Symmetry.down),
-        Goal.x_cross: ("R L' U2 R2 L U2 R U", Symmetry.down_bl),
-        Goal.xx_cross_adjacent: ("R L' U2 R' L U", Symmetry.down_b),
-        Goal.xx_cross_diagonal: ("R' L' U2 R L U", Symmetry.down_bl_fr),
-        Goal.xxx_cross: ("R U R' U", Symmetry.down_fr),
-        Goal.block_1x1x3: ("Fw Rw", Symmetry.bl),
-        Goal.block_1x2x2: ("U R Fw", Symmetry.back_dl),
-        Goal.block_1x2x3: ("U Rw", Symmetry.dl),
-        Goal.block_2x2x2: ("U R F", Symmetry.down_bl),
-        Goal.block_2x2x3: ("U R", Symmetry.dl),
-        Goal.corners: ("M' S E", None),
-        Goal.edges: ("E2 R L S2 L R' S2 R2 S M S M'", None),
-        Goal.solved: ("", None),
-        Goal.minus_slice_m: ("M", None),
-        Goal.minus_slice_s: ("S", None),
-        Goal.minus_slice_e: ("E", None),
+        Goal.layer: (["Dw"], Symmetry.up),
+        Goal.cross: (["R", "L", "U2", "R2", "L2", "U2", "R", "L", "U"], Symmetry.down),
+        Goal.f2l: (["U"], Symmetry.down),
+        Goal.x_cross: (["R", "L'", "U2", "R2", "L", "U2", "R", "U"], Symmetry.down_bl),
+        Goal.xx_cross_adjacent: (["R", "L'", "U2", "R'", "L", "U"], Symmetry.down_b),
+        Goal.xx_cross_diagonal: (["R'", "L'", "U2", "R", "L", "U"], Symmetry.down_bl_fr),
+        Goal.xxx_cross: (["R", "U", "R'", "U"], Symmetry.down_fr),
+        Goal.block_1x1x3: (["Fw", "Rw"], Symmetry.bl),
+        Goal.block_1x2x2: (["U", "R", "Fw"], Symmetry.back_dl),
+        Goal.block_1x2x3: (["U", "Rw"], Symmetry.dl),
+        Goal.block_2x2x2: (["U", "R", "F"], Symmetry.down_bl),
+        Goal.block_2x2x3: (["U", "R"], Symmetry.dl),
+        Goal.corners: (["M'", "S", "E"], None),
+        Goal.edges: (["E2", "R", "L", "S2", "L", "R'", "S2", "R2", "S", "M", "S", "M'"], None),
+        Goal.solved: ([], None),
+        Goal.minus_slice_m: (["M"], None),
+        Goal.minus_slice_s: (["S"], None),
+        Goal.minus_slice_e: (["E"], None),
     }
     for pattern, (moves, symmetry) in solved_tags.items():
         cubexes[pattern] = Cubex.from_settings(
             name=pattern.value,
-            solved_sequence=MoveSequence.from_str(moves),
+            solved_sequence=MoveSequence(moves),
             symmetry=symmetry,
             cube_size=cube_size,
         )
@@ -288,7 +288,7 @@ def get_cubexes(cube_size: int = CUBE_SIZE) -> dict[Goal, Cubex]:
     # Symmetric orientations
     cubexes[Goal.co_face] = Cubex.from_settings(
         name=Goal.co_face.value,
-        solved_sequence=MoveSequence.from_str("y"),
+        solved_sequence=MoveSequence(["y"]),
         pieces=[Piece.corner],
         piece_orientations=MoveGenerator.from_str("<U>"),
         symmetry=Symmetry.up,
@@ -296,7 +296,7 @@ def get_cubexes(cube_size: int = CUBE_SIZE) -> dict[Goal, Cubex]:
     )
     cubexes[Goal.eo_face] = Cubex.from_settings(
         name=Goal.eo_face.value,
-        solved_sequence=MoveSequence.from_str("y"),
+        solved_sequence=MoveSequence(["y"]),
         pieces=[Piece.edge],
         piece_orientations=MoveGenerator.from_str("<U>"),
         symmetry=Symmetry.up,
@@ -304,7 +304,7 @@ def get_cubexes(cube_size: int = CUBE_SIZE) -> dict[Goal, Cubex]:
     )
     cubexes[Goal.face] = Cubex.from_settings(
         name=Goal.face.value,
-        solved_sequence=MoveSequence.from_str("y"),
+        solved_sequence=MoveSequence(["y"]),
         pieces=[Piece.corner, Piece.edge],
         piece_orientations=MoveGenerator.from_str("<U>"),
         symmetry=Symmetry.up,
@@ -347,14 +347,14 @@ def get_cubexes(cube_size: int = CUBE_SIZE) -> dict[Goal, Cubex]:
 
     # Non-symmetric center orientations
     center_orientation_tags = {
-        Goal.xo_fb: "z",
-        Goal.xo_lr: "x",
-        Goal.xo_ud: "y",
+        Goal.xo_fb: ["z"],
+        Goal.xo_lr: ["x"],
+        Goal.xo_ud: ["y"],
     }
     for pattern, seq in center_orientation_tags.items():
         cubexes[pattern] = Cubex.from_settings(
             name=pattern.value,
-            solved_sequence=MoveSequence.from_str(seq),
+            solved_sequence=MoveSequence(seq),
             keep=False,
             cube_size=cube_size,
         )
