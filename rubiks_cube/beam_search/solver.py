@@ -3,6 +3,7 @@ from __future__ import annotations
 import asyncio
 import math
 import time
+from enum import Enum
 from typing import TYPE_CHECKING
 from typing import Callable
 from typing import Sequence
@@ -24,14 +25,16 @@ from rubiks_cube.configuration.types import CubePermutation
 from rubiks_cube.move.generator import MoveGenerator
 from rubiks_cube.move.sequence import MoveSequence
 from rubiks_cube.move.sequence import measure
+from rubiks_cube.move.utils import niss_move
 from rubiks_cube.representation import get_rubiks_cube_state
 from rubiks_cube.representation.permutation import apply_moves_to_permutation
+from rubiks_cube.representation.utils import invert
 from rubiks_cube.solver.actions import get_actions
 from rubiks_cube.solver.bidirectional import BidirectionalSolver
 
 if TYPE_CHECKING:
-    from rubiks_cube.beam_search.models import BeamPlan
-    from rubiks_cube.beam_search.models import BeamStep
+    from rubiks_cube.beam_search.interface import BeamPlan
+    from rubiks_cube.beam_search.interface import BeamStep
 
 BeamHeuristic: TypeAlias = Callable[[CubePermutation, Sequence["_StepOptions"]], float]
 
@@ -57,6 +60,46 @@ class _BeamCandidate:
     permutation: CubePermutation
     cost: int
     last_goal: Goal | None
+    side: "_SearchSide"
+
+
+class _SearchSide(str, Enum):
+    normal = "normal"
+    inverse = "inverse"
+
+
+def _toggle_side(side: _SearchSide) -> _SearchSide:
+    if side is _SearchSide.normal:
+        return _SearchSide.inverse
+    return _SearchSide.normal
+
+
+def _step_sides(candidate: _BeamCandidate, step: BeamStep) -> tuple[_SearchSide, ...]:
+    transition = step.transition
+    if transition is None or transition.side_mode == "same":
+        return (candidate.side,)
+    if transition.side_mode == "normal":
+        return (_SearchSide.normal,)
+    if transition.side_mode == "inverse":
+        return (_SearchSide.inverse,)
+    if transition.side_mode == "switch":
+        return (_toggle_side(candidate.side),)
+    return (candidate.side, _toggle_side(candidate.side))
+
+
+def _search_permutation(
+    permutation: CubePermutation,
+    side: _SearchSide,
+) -> CubePermutation:
+    if side is _SearchSide.normal:
+        return permutation
+    return invert(permutation)
+
+
+def _sequence_for_side(solution: MoveSequence, side: _SearchSide) -> MoveSequence:
+    if side is _SearchSide.normal:
+        return solution
+    return MoveSequence([niss_move(move) for move in solution])
 
 
 @frozen
@@ -173,14 +216,10 @@ def _build_step_contexts(plan: BeamPlan, cube_size: int) -> list[_StepOptions]:
 
         contexts_by_generator: dict[str, list[_StepContext]] = {}
         for generator_key, generator in generator_map.items():
-            actions = get_actions(
-                generator=generator, algorithms=step.algorithms, cube_size=cube_size
-            )
+            actions = get_actions(generator=generator, cube_size=cube_size)
             goal_contexts: list[_StepContext] = []
             for goal in step.goals:
-                pattern = get_rubiks_cube_pattern(
-                    goal=goal, subset=step.subset, cube_size=cube_size
-                )
+                pattern = get_rubiks_cube_pattern(goal=goal, cube_size=cube_size)
                 solver = BidirectionalSolver.from_actions_and_pattern(
                     actions=actions,
                     pattern=pattern,
@@ -257,6 +296,7 @@ def beam_search(
             permutation=initial_permutation,
             cost=0,
             last_goal=None,
+            side=_SearchSide.normal,
         )
     ]
 
@@ -266,7 +306,6 @@ def beam_search(
 
     for step_index, step_options in enumerate(contexts):
         remaining_steps = contexts[step_index + 1 :]
-        allowed_subsets = step_options.step.allowed_subsets()
         next_beam: list[_BeamCandidate] = []
 
         for candidate in beam:
@@ -293,43 +332,54 @@ def beam_search(
                     allowed_prev_goals=allowed_prev,
                 ):
                     continue
-                solutions = context.solver.search(
-                    permutation=candidate.permutation,
-                    n_solutions=step_options.step.solver_n_solutions(),
-                    min_search_depth=step_options.step.min_search_depth,
-                    max_search_depth=step_options.step.max_search_depth,
-                    max_time=step_time,
-                )
-                sequences = _normalize_solutions(solutions, metric=metric)
-                if sequences is None:
-                    continue
-
-                for solution in sequences:
-                    new_permutation = apply_moves_to_permutation(
-                        candidate.permutation, solution, cube_size=cube_size
+                for side in _step_sides(candidate, step_options.step):
+                    permutation_to_solve = _search_permutation(candidate.permutation, side)
+                    solutions = context.solver.search(
+                        permutation=permutation_to_solve,
+                        n_solutions=step_options.step.n_solutions,
+                        min_search_depth=step_options.step.min_search_depth,
+                        max_search_depth=step_options.step.max_search_depth,
+                        max_time=step_time,
                     )
-                    new_steps = [*candidate.steps, solution]
-                    new_sequence = candidate.sequence + solution
-                    new_cost = candidate.cost + measure(solution, metric=metric)
-                    if not _passes_subset_filter(
-                        permutation=new_permutation,
-                        goal=context.goal,
-                        allowed_subsets=allowed_subsets,
-                    ):
+                    sequences = _normalize_solutions(solutions, metric=metric)
+                    if sequences is None:
                         continue
 
-                    new_candidate = _BeamCandidate(
-                        sequence=new_sequence,
-                        steps=new_steps,
-                        permutation=new_permutation,
-                        cost=new_cost,
-                        last_goal=context.goal,
-                    )
+                    for solution in sequences:
+                        solved_permutation = apply_moves_to_permutation(
+                            permutation_to_solve, solution, cube_size=cube_size
+                        )
+                        if side is _SearchSide.normal:
+                            new_permutation = solved_permutation
+                        else:
+                            new_permutation = invert(solved_permutation)
 
-                    if step_index == len(contexts) - 1:
-                        _insert_solution(best_solutions, new_candidate, n_solutions=n_solutions)
-                    else:
-                        next_beam.append(new_candidate)
+                        allowed_subsets = step_options.step.allowed_subsets(context.goal)
+                        if not _passes_subset_filter(
+                            permutation=solved_permutation,
+                            goal=context.goal,
+                            allowed_subsets=allowed_subsets,
+                        ):
+                            continue
+
+                        step_solution = _sequence_for_side(solution, side)
+                        new_steps = [*candidate.steps, step_solution]
+                        new_sequence = candidate.sequence + step_solution
+                        new_cost = candidate.cost + measure(solution, metric=metric)
+
+                        new_candidate = _BeamCandidate(
+                            sequence=new_sequence,
+                            steps=new_steps,
+                            permutation=new_permutation,
+                            cost=new_cost,
+                            last_goal=context.goal,
+                            side=side,
+                        )
+
+                        if step_index == len(contexts) - 1:
+                            _insert_solution(best_solutions, new_candidate, n_solutions=n_solutions)
+                        else:
+                            next_beam.append(new_candidate)
 
         if timed_out:
             break
@@ -387,6 +437,7 @@ async def beam_search_async(
             permutation=initial_permutation,
             cost=0,
             last_goal=None,
+            side=_SearchSide.normal,
         )
     ]
 
@@ -396,7 +447,6 @@ async def beam_search_async(
 
     for step_index, step_options in enumerate(contexts):
         remaining_steps = contexts[step_index + 1 :]
-        allowed_subsets = step_options.step.allowed_subsets()
         next_beam: list[_BeamCandidate] = []
 
         for candidate in beam:
@@ -423,43 +473,54 @@ async def beam_search_async(
                     allowed_prev_goals=allowed_prev,
                 ):
                     continue
-                solutions = context.solver.search(
-                    permutation=candidate.permutation,
-                    n_solutions=step_options.step.solver_n_solutions(),
-                    min_search_depth=step_options.step.min_search_depth,
-                    max_search_depth=step_options.step.max_search_depth,
-                    max_time=step_time,
-                )
-                sequences = _normalize_solutions(solutions, metric=metric)
-                if sequences is None:
-                    continue
-
-                for solution in sequences:
-                    new_permutation = apply_moves_to_permutation(
-                        candidate.permutation, solution, cube_size=cube_size
+                for side in _step_sides(candidate, step_options.step):
+                    permutation_to_solve = _search_permutation(candidate.permutation, side)
+                    solutions = context.solver.search(
+                        permutation=permutation_to_solve,
+                        n_solutions=step_options.step.n_solutions,
+                        min_search_depth=step_options.step.min_search_depth,
+                        max_search_depth=step_options.step.max_search_depth,
+                        max_time=step_time,
                     )
-                    new_steps = [*candidate.steps, solution]
-                    new_sequence = candidate.sequence + solution
-                    new_cost = candidate.cost + measure(solution, metric=metric)
-                    if not _passes_subset_filter(
-                        permutation=new_permutation,
-                        goal=context.goal,
-                        allowed_subsets=allowed_subsets,
-                    ):
+                    sequences = _normalize_solutions(solutions, metric=metric)
+                    if sequences is None:
                         continue
 
-                    new_candidate = _BeamCandidate(
-                        sequence=new_sequence,
-                        steps=new_steps,
-                        permutation=new_permutation,
-                        cost=new_cost,
-                        last_goal=context.goal,
-                    )
+                    for solution in sequences:
+                        solved_permutation = apply_moves_to_permutation(
+                            permutation_to_solve, solution, cube_size=cube_size
+                        )
+                        if side is _SearchSide.normal:
+                            new_permutation = solved_permutation
+                        else:
+                            new_permutation = invert(solved_permutation)
 
-                    if step_index == len(contexts) - 1:
-                        _insert_solution(best_solutions, new_candidate, n_solutions=n_solutions)
-                    else:
-                        next_beam.append(new_candidate)
+                        allowed_subsets = step_options.step.allowed_subsets(context.goal)
+                        if not _passes_subset_filter(
+                            permutation=solved_permutation,
+                            goal=context.goal,
+                            allowed_subsets=allowed_subsets,
+                        ):
+                            continue
+
+                        step_solution = _sequence_for_side(solution, side)
+                        new_steps = [*candidate.steps, step_solution]
+                        new_sequence = candidate.sequence + step_solution
+                        new_cost = candidate.cost + measure(solution, metric=metric)
+
+                        new_candidate = _BeamCandidate(
+                            sequence=new_sequence,
+                            steps=new_steps,
+                            permutation=new_permutation,
+                            cost=new_cost,
+                            last_goal=context.goal,
+                            side=side,
+                        )
+
+                        if step_index == len(contexts) - 1:
+                            _insert_solution(best_solutions, new_candidate, n_solutions=n_solutions)
+                        else:
+                            next_beam.append(new_candidate)
 
             await asyncio.sleep(0)
 
