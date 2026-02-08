@@ -9,7 +9,6 @@ import streamlit as st
 
 from rubiks_cube.configuration.logging import configure_logging
 from rubiks_cube.configuration.paths import DATA_DIR
-from rubiks_cube.pages import beam_search
 from rubiks_cube.pages import docs
 from rubiks_cube.pages import solver
 from rubiks_cube.parsing import parse_scramble
@@ -51,11 +50,6 @@ def get_router() -> stx.Router:
                 session=st.session_state,
                 cookie_manager=COOKIE_MANAGER,
             ),
-            "/beam-search": partial(
-                beam_search,
-                session=st.session_state,
-                cookie_manager=COOKIE_MANAGER,
-            ),
             "/docs": partial(
                 docs,
                 session=st.session_state,
@@ -75,7 +69,7 @@ def router() -> None:
         st.session_state.__setattr__("initialized", True)
         router.route("solver")
 
-    cols = st.columns([1, 1, 1])
+    cols = st.columns([1, 1])
 
     with cols[0]:
         if st.button(":blue[SOLVER]", key="solver"):
@@ -83,11 +77,6 @@ def router() -> None:
             router.route("solver")
 
     with cols[1]:
-        if st.button(":blue[BEAM SEARCH]", key="beam-search"):
-            COOKIE_MANAGER.set("page", "beam-search")
-            router.route("beam-search")
-
-    with cols[2]:
         if st.button(":blue[DOCS]", key="docs"):
             COOKIE_MANAGER.set("page", "docs")
             router.route("docs")
