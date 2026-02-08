@@ -26,6 +26,7 @@ from rubiks_cube.move.generator import MoveGenerator
 from rubiks_cube.move.sequence import MoveSequence
 from rubiks_cube.move.sequence import cleanup
 from rubiks_cube.move.sequence import measure
+from rubiks_cube.move.sequence import unniss
 from rubiks_cube.parsing import parse_scramble
 from rubiks_cube.parsing import parse_steps
 from rubiks_cube.representation import get_rubiks_cube_state
@@ -57,7 +58,7 @@ def app(session: SessionStateProxy, cookie_manager: stx.CookieManager, tool: str
     # Get all cookies to ensure they're loaded (only call this once)
     all_cookies = cookie_manager.get_all() or {}
 
-    st.subheader("Spruce 🌲")
+    st.subheader("Spruce")
 
     # Get current scramble value from cookie, with fallback
     current_scramble_value = all_cookies.get("scramble_input", "")
@@ -223,7 +224,7 @@ def solver(session: SessionStateProxy, cookie_manager: stx.CookieManager) -> Non
             )
             beam_width = st.number_input(
                 label="Beam Width",
-                value=20,
+                value=50,
                 min_value=1,
                 max_value=200,
                 key="beam_width",
@@ -251,19 +252,24 @@ def solver(session: SessionStateProxy, cookie_manager: stx.CookieManager) -> Non
             solutions_metadata: list[dict[str, int | str | None]] = []
             for solution in solutions:
                 solution_moves = measure(solution, metric=DEFAULT_METRIC)
-                combined_sequence = cleanup(cleaned_steps + solution, move_meta)
-                total_moves = measure(combined_sequence, metric=DEFAULT_METRIC)
-                cancellations = (
-                    measure(cleaned_steps, metric=DEFAULT_METRIC)
-                    + solution_moves
-                    - measure(combined_sequence, metric=DEFAULT_METRIC)
-                )
+                final_sequence = cleaned_steps + solution
                 final_state = get_rubiks_cube_state(
                     sequence=solution,
                     initial_permutation=initial_state,
                     orientate_after=True,
                 )
                 tag, subset_tag = autotag_permutation_with_subset(final_state)
+
+                # Include normal <-> inverse cancellations when the result is solved.
+                if tag == "solved":
+                    final_sequence = unniss(final_sequence)
+
+                cleaned_final_sequence = cleanup(final_sequence, move_meta)
+                total_moves = measure(cleaned_final_sequence, metric=DEFAULT_METRIC)
+                cancellations = (
+                    measure(cleaned_steps, metric=DEFAULT_METRIC) + solution_moves - total_moves
+                )
+
                 solutions_metadata.append(
                     {
                         "solution": str(solution),

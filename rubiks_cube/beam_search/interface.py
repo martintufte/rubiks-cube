@@ -43,7 +43,6 @@ class BeamStep:
     min_search_depth: int = 0
     max_search_depth: int = 10
     n_solutions: int = 1
-    search_solutions: int = 1
     max_time: float | None = None
 
     def allowed_subsets(self, goal: Goal) -> list[str] | None:

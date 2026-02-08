@@ -15,7 +15,7 @@ from rubiks_cube.parsing import parse_scramble
 from rubiks_cube.parsing import parse_steps
 
 st.set_page_config(
-    page_title="Spruce",
+    page_title="Spruce 🌲",
     page_icon=DATA_DIR / "favicon.png",
 )
 
