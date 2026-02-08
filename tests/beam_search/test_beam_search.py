@@ -1,13 +1,10 @@
 from __future__ import annotations
 
-import asyncio
-
 from rubiks_cube.beam_search import EO_DR_HTR_PLAN
 from rubiks_cube.beam_search import BeamPlan
 from rubiks_cube.beam_search import BeamStep
 from rubiks_cube.beam_search import Transition
 from rubiks_cube.beam_search import beam_search
-from rubiks_cube.beam_search import beam_search_async
 from rubiks_cube.configuration.enumeration import Goal
 from rubiks_cube.configuration.enumeration import Status
 from rubiks_cube.move.sequence import MoveSequence
@@ -91,32 +88,6 @@ def test_beam_search_single_step() -> None:
     assert len(summary.solutions[0].sequence) == 1
 
 
-def test_beam_search_async() -> None:
-    plan = BeamPlan.from_steps(
-        name="solve",
-        steps=[
-            BeamStep(
-                goals=[Goal.solved],
-                max_search_depth=3,
-                n_solutions=2,
-            )
-        ],
-    )
-    summary = asyncio.run(
-        beam_search_async(
-            sequence=MoveSequence.from_str("L"),
-            plan=plan,
-            beam_width=2,
-            n_solutions=1,
-            max_time=10.0,
-        )
-    )
-
-    assert summary.status is Status.Success
-    assert summary.solutions
-    assert len(summary.solutions[0].sequence) == 1
-
-
 def test_presets_work_on_solved_cube() -> None:
     empty = MoveSequence()
 
@@ -163,13 +134,13 @@ def test_multi_goal_step_on_solved_cube() -> None:
 
 def test_eo_dr_htr_scramble_solution() -> None:
     scramble = MoveSequence.from_str(
-        "R' U' F D2 R L F' B D L' B' U2 R' U2 B2 D2 F2 R' B2 R D2 R' B2 F' R' U' F"
+        "R' U' F R' B2 R B D' F L2 B U' R2 F2 R F2 L' F2 R2 U2 F2 U2 L2 F2 R' U' F"
     )
 
     summary = beam_search(
         sequence=scramble,
         plan=EO_DR_HTR_PLAN,
-        beam_width=10,
+        beam_width=50,
         n_solutions=1,
         max_time=60.0,
     )

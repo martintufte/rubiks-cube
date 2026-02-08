@@ -8,7 +8,6 @@ from rubiks_cube.beam_search.solver import BeamHeuristic
 from rubiks_cube.beam_search.solver import BeamSearchSummary
 from rubiks_cube.beam_search.solver import BeamSolution
 from rubiks_cube.beam_search.solver import beam_search
-from rubiks_cube.beam_search.solver import beam_search_async
 from rubiks_cube.beam_search.template import EO_DR_HTR_PLAN
 
 __all__ = [
@@ -21,5 +20,4 @@ __all__ = [
     "SideMode",
     "Transition",
     "beam_search",
-    "beam_search_async",
 ]
