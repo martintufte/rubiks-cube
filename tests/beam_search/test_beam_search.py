@@ -140,7 +140,7 @@ def test_eo_dr_htr_scramble_solution() -> None:
     summary = beam_search(
         sequence=scramble,
         plan=EO_DR_HTR_PLAN,
-        beam_width=50,
+        beam_width=10,
         n_solutions=1,
         max_time=60.0,
     )

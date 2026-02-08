@@ -83,10 +83,7 @@ def _step_sides(candidate: BeamCandidate, step: BeamStep) -> tuple[SearchSide, .
     return (candidate.side, candidate.side.toggle())
 
 
-def _search_permutation(
-    permutation: CubePermutation,
-    side: SearchSide,
-) -> CubePermutation:
+def _search_permutation(permutation: CubePermutation, side: SearchSide) -> CubePermutation:
     if side is SearchSide.normal:
         return permutation
     return invert(permutation)

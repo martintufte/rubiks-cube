@@ -223,7 +223,7 @@ def solver(session: SessionStateProxy, cookie_manager: stx.CookieManager) -> Non
             )
             beam_width = st.number_input(
                 label="Beam Width",
-                value=5,
+                value=20,
                 min_value=1,
                 max_value=200,
                 key="beam_width",
