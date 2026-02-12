@@ -1,8 +1,8 @@
 from __future__ import annotations
 
+from rubiks_cube.beam_search.interface import BeamPlan
+from rubiks_cube.beam_search.interface import BeamStep
 from rubiks_cube.beam_search.interface import Transition
-from rubiks_cube.beam_search.solver import BeamPlan
-from rubiks_cube.beam_search.solver import BeamStep
 from rubiks_cube.beam_search.solver import beam_search
 from rubiks_cube.beam_search.template import EO_DR_HTR_PLAN
 from rubiks_cube.configuration.enumeration import Goal
