@@ -7,6 +7,7 @@ from typing import Self  # ty: ignore[unresolved-import]
 import attrs
 import numpy as np
 
+from rubiks_cube.configuration.enumeration import SolveStrategy
 from rubiks_cube.configuration.enumeration import Status
 from rubiks_cube.move.sequence import MoveSequence
 from rubiks_cube.move.utils import niss_move
@@ -83,8 +84,13 @@ class BidirectionalSolver(PermutationSolver):
         min_search_depth: int,
         max_search_depth: int,
         max_time: float,
-        search_inverse: bool = False,
+        solve_strategy: SolveStrategy = SolveStrategy.normal,
     ) -> SearchSummary:
+        if solve_strategy is SolveStrategy.both:
+            msg = "BidirectionalSolver.search does not support SolveStrategy.both."
+            raise ValueError(msg)
+
+        search_inverse = solve_strategy is SolveStrategy.inverse
         if search_inverse:
             permutation = invert(permutation)
 
