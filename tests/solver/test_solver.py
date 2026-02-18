@@ -153,7 +153,7 @@ def test_solve_strategy_both_merges_and_deduplicates(
         sequence=MoveSequence(),
         generator=MoveGenerator.from_str("<U>"),
         goal=Goal.solved,
-        max_solutions=1,
+        max_solutions=2,
         solve_strategy=SolveStrategy.both,
         cube_size=3,
     )

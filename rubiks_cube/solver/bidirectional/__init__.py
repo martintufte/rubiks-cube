@@ -87,11 +87,9 @@ class BidirectionalSolver(PermutationSolver):
         solve_strategy: SolveStrategy = SolveStrategy.normal,
     ) -> SearchSummary:
         if solve_strategy is SolveStrategy.both:
-            msg = "BidirectionalSolver.search does not support SolveStrategy.both."
-            raise ValueError(msg)
+            raise ValueError(f"Got unsupported solve strategey {solve_strategy}")
 
-        search_inverse = solve_strategy is SolveStrategy.inverse
-        if search_inverse:
+        if solve_strategy is SolveStrategy.inverse:
             permutation = invert(permutation)
 
         initial_permutation = self.index_optimizer.transform_permutation(permutation)
@@ -117,7 +115,7 @@ class BidirectionalSolver(PermutationSolver):
                 status=Status.Failure,
             )
 
-        if search_inverse:
+        if solve_strategy is SolveStrategy.inverse:
             return SearchSummary(
                 solutions=[
                     MoveSequence([niss_move(move) for move in solution]) for solution in solutions

@@ -120,11 +120,17 @@ def solve_pattern(
         cube_size=cube_size,
     )
 
-    def _search_single_strategy(*, strategy: SolveStrategy) -> SearchSummary:
-        all_solutions: list[MoveSequence] = []
-        total_walltime = 0.0
-        status = Status.Failure
+    solve_strategies = (
+        [SolveStrategy.normal, SolveStrategy.inverse]
+        if solve_strategy is SolveStrategy.both
+        else [solve_strategy]
+    )
 
+    all_solutions: list[MoveSequence] = []
+    status = Status.Failure
+    total_walltime = 0.0
+
+    for strategy in solve_strategies:
         for pattern in patterns:
             remaining_time = max_time - total_walltime
             if remaining_time <= 0:
@@ -153,51 +159,21 @@ def solve_pattern(
 
             status = Status.Success
             if len(pattern_summary.solutions) == 0:
-                all_solutions = []
-                break
+                continue
 
             all_solutions.extend(pattern_summary.solutions)
 
-        if status is Status.Success and all_solutions:
-            all_solutions = sorted(
-                all_solutions,
-                key=lambda solution: (len(solution), str(solution)),
-            )[:max_solutions]
+    unique_solutions = {str(solution): solution for solution in all_solutions}
+    solutions = sorted(
+        unique_solutions.values(),
+        key=lambda solution: (len(solution), str(solution)),
+    )[:max_solutions]
 
-        return SearchSummary(
-            solutions=all_solutions,
-            walltime=total_walltime,
-            status=status,
-        )
-
-    if solve_strategy is SolveStrategy.both:
-        normal_summary = _search_single_strategy(strategy=SolveStrategy.normal)
-        inverse_summary = _search_single_strategy(strategy=SolveStrategy.inverse)
-
-        unique_solutions = {
-            str(solution): solution
-            for solution in [*normal_summary.solutions, *inverse_summary.solutions]
-        }
-        combined_solutions = sorted(
-            unique_solutions.values(),
-            key=lambda solution: (len(solution), str(solution)),
-        )[: max_solutions * 2]
-
-        status = (
-            Status.Success
-            if combined_solutions
-            or (
-                normal_summary.status is Status.Success and inverse_summary.status is Status.Success
-            )
-            else Status.Failure
-        )
-        search_summary = SearchSummary(
-            solutions=combined_solutions,
-            walltime=normal_summary.walltime + inverse_summary.walltime,
-            status=status,
-        )
-    else:
-        search_summary = _search_single_strategy(strategy=solve_strategy)
+    search_summary = SearchSummary(
+        solutions=solutions,
+        walltime=total_walltime,
+        status=status,
+    )
 
     LOGGER.info(
         f"Solver found {len(search_summary.solutions)} solutions. "
