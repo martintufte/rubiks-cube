@@ -15,6 +15,7 @@ class Transition:
     search_side: Literal["prev", "switch", "both", "normal", "inverse"] = "prev"
     generator_map: dict[Goal, MoveGenerator] = attrs.field(factory=dict)
     check_contained: bool = False
+    look_for_prev_variations: bool = False
 
 
 @attrs.frozen

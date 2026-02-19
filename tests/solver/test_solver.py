@@ -11,7 +11,10 @@ from rubiks_cube.configuration.enumeration import Status
 from rubiks_cube.move.generator import MoveGenerator
 from rubiks_cube.move.sequence import MoveSequence
 from rubiks_cube.move.utils import is_niss
+from rubiks_cube.representation import get_rubiks_cube_permutation
 from rubiks_cube.solver import solve_pattern
+from rubiks_cube.solver.actions import get_actions
+from rubiks_cube.solver.bidirectional import BidirectionalSolver
 from rubiks_cube.solver.interface import SearchSummary
 
 if TYPE_CHECKING:
@@ -231,6 +234,37 @@ def test_solve_pattern_aggregates_multi_pattern_summaries(
     assert search_summary.status is Status.Success
     assert search_summary.solutions == [MoveSequence.from_str("R")]
     assert search_summary.walltime == 0.5
+
+
+def test_bidirectional_solver_search_many_returns_rooted_solutions() -> None:
+    actions = get_actions(generator=MoveGenerator.from_str("<R>"), cube_size=3)
+    pattern = np.arange(54, dtype=np.uint8)
+    solver = BidirectionalSolver.from_actions_and_pattern(
+        actions=actions,
+        pattern=pattern,
+        cube_size=3,
+        optimize_indices=False,
+        solution_validator=None,
+    )
+    permutations = [
+        get_rubiks_cube_permutation(sequence=MoveSequence.from_str("R"), cube_size=3),
+        get_rubiks_cube_permutation(sequence=MoveSequence.from_str("R'"), cube_size=3),
+    ]
+
+    summary = solver.search_many(
+        permutations=permutations,
+        max_solutions_per_permutation=1,
+        min_search_depth=0,
+        max_search_depth=1,
+        max_time=10.0,
+        solve_strategy=SolveStrategy.normal,
+    )
+
+    assert summary.status is Status.Success
+    assert len(summary.solutions) == 2
+    by_root = {solution.permutation_index: str(solution.sequence) for solution in summary.solutions}
+    assert by_root[0] == "R'"
+    assert by_root[1] == "R"
 
 
 if __name__ == "__main__":

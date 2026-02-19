@@ -15,7 +15,10 @@ from rubiks_cube.representation.mask import get_ones_mask
 from rubiks_cube.representation.permutation import get_identity_permutation
 from rubiks_cube.representation.utils import invert
 from rubiks_cube.solver.bidirectional.beta import bidirectional_solver
+from rubiks_cube.solver.bidirectional.beta import bidirectional_solver_many
 from rubiks_cube.solver.interface import PermutationSolver
+from rubiks_cube.solver.interface import RootedSolution
+from rubiks_cube.solver.interface import SearchManySummary
 from rubiks_cube.solver.interface import SearchSummary
 from rubiks_cube.solver.optimizers import ActionOptimizer
 from rubiks_cube.solver.optimizers import IndexOptimizer
@@ -126,6 +129,62 @@ class BidirectionalSolver(PermutationSolver):
 
         return SearchSummary(
             solutions=[MoveSequence(solution) for solution in solutions],
+            walltime=walltime,
+            status=Status.Success,
+        )
+
+    def search_many(
+        self,
+        permutations: list[CubePermutation],
+        max_solutions_per_permutation: int,
+        min_search_depth: int,
+        max_search_depth: int,
+        max_time: float,
+        solve_strategy: SolveStrategy = SolveStrategy.normal,
+    ) -> SearchManySummary:
+        if solve_strategy is SolveStrategy.both:
+            raise ValueError(f"Got unsupported solve strategey {solve_strategy}")
+
+        transformed_permutations = permutations
+        if solve_strategy is SolveStrategy.inverse:
+            transformed_permutations = [invert(permutation) for permutation in permutations]
+
+        initial_permutations = [
+            self.index_optimizer.transform_permutation(permutation)
+            for permutation in transformed_permutations
+        ]
+
+        start_time = time.perf_counter()
+        rooted_solutions = bidirectional_solver_many(
+            initial_permutations=initial_permutations,
+            actions=self.actions,
+            pattern=self.pattern,
+            adj_matrix=self.adj_matrix,
+            min_search_depth=min_search_depth,
+            max_search_depth=max_search_depth,
+            max_solutions=max_solutions_per_permutation * len(initial_permutations),
+            max_solutions_per_root=max_solutions_per_permutation,
+            solution_validator=self.solution_validator,
+            max_time=max_time,
+        )
+        walltime = time.perf_counter() - start_time
+
+        if rooted_solutions is None:
+            return SearchManySummary(
+                solutions=[],
+                walltime=walltime,
+                status=Status.Failure,
+            )
+
+        solutions: list[RootedSolution] = []
+        for root_index, solution in rooted_solutions:
+            sequence = MoveSequence(solution)
+            if solve_strategy is SolveStrategy.inverse:
+                sequence = MoveSequence([niss_move(move) for move in solution])
+            solutions.append(RootedSolution(permutation_index=root_index, sequence=sequence))
+
+        return SearchManySummary(
+            solutions=solutions,
             walltime=walltime,
             status=Status.Success,
         )
