@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import logging
 import time
-from enum import Enum
 from typing import TYPE_CHECKING
 
 from attrs import frozen
@@ -15,7 +14,7 @@ from rubiks_cube.configuration import DEFAULT_GENERATOR
 from rubiks_cube.configuration import DEFAULT_METRIC
 from rubiks_cube.configuration.enumeration import Goal
 from rubiks_cube.configuration.enumeration import Metric
-from rubiks_cube.configuration.enumeration import SolveStrategy
+from rubiks_cube.configuration.enumeration import SearchSide
 from rubiks_cube.configuration.enumeration import Status
 from rubiks_cube.move.generator import MoveGenerator
 from rubiks_cube.move.meta import MoveMeta
@@ -36,16 +35,6 @@ if TYPE_CHECKING:
 LOGGER = logging.getLogger(__name__)
 
 
-class SearchSide(str, Enum):
-    normal = "normal"
-    inverse = "inverse"
-
-    def toggle(self) -> SearchSide:
-        if self == SearchSide.normal:
-            return SearchSide.inverse
-        return SearchSide.normal
-
-
 @frozen
 class BeamSolution:
     sequence: MoveSequence
@@ -62,7 +51,6 @@ class BeamSearchSummary:
 
 @frozen
 class BeamCandidate:
-    sequence: MoveSequence
     steps: MoveSteps
     permutation: CubePermutation
     side: SearchSide
@@ -70,7 +58,7 @@ class BeamCandidate:
     cost: int
 
 
-def _step_sides(candidate: BeamCandidate, step: BeamStep) -> tuple[SearchSide, ...]:
+def search_sides(candidate: BeamCandidate, step: BeamStep) -> tuple[SearchSide, ...]:
     if step.transition.search_side == "prev":
         return (candidate.side,)
     if step.transition.search_side == "normal":
@@ -124,7 +112,9 @@ def _insert_solution(
     max_solutions: int,
 ) -> None:
     best_solutions.append(
-        BeamSolution(sequence=candidate.sequence, steps=candidate.steps, cost=candidate.cost)
+        BeamSolution(
+            sequence=candidate.steps.to_sequence(), steps=candidate.steps, cost=candidate.cost
+        )
     )
     best_solutions.sort(key=lambda solution: solution.cost)
     del best_solutions[max_solutions:]
@@ -132,7 +122,9 @@ def _insert_solution(
 
 def expand_variantions(candidate: BeamCandidate, move_meta: MoveMeta) -> list[BeamCandidate]:
     candidate_variations = [candidate]
-    # TODO(martin): Look for previous variations
+    # TODO(martin): Look for previous variations. E.g. if "F" solves EO, then "F'" also does
+    # This should be computationally cheap to perform
+
     return candidate_variations
 
 
@@ -254,7 +246,6 @@ def beam_search(
 
     beam: list[BeamCandidate] = [
         BeamCandidate(
-            sequence=MoveSequence(),
             steps=MoveSteps(),
             permutation=permutation,
             side=SearchSide.normal,
@@ -292,18 +283,14 @@ def beam_search(
                 ):
                     continue
 
-                for side in _step_sides(candidate, step_options.step):
+                for side in search_sides(candidate=candidate, step=step_options.step):
                     search_summary = context.solver.search_many(
                         permutations=permutations,
                         max_solutions_per_permutation=step_options.step.max_solutions,
                         min_search_depth=step_options.step.min_search_depth,
                         max_search_depth=step_options.step.max_search_depth,
                         max_time=step_time,
-                        solve_strategy=(
-                            SolveStrategy.inverse
-                            if side is SearchSide.inverse
-                            else SolveStrategy.normal
-                        ),
+                        side=side,
                     )
 
                     if search_summary.status is Status.Failure:
@@ -324,10 +311,7 @@ def beam_search(
                             cube_size=cube_size,
                         )
 
-                        new_sequence = variation.sequence + solution
-
                         new_candidate = BeamCandidate(
-                            sequence=new_sequence,
                             steps=variation.steps.with_step(solution),
                             permutation=new_permutation,
                             prev_goal=context.goal,

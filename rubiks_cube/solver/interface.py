@@ -5,7 +5,7 @@ from abc import abstractmethod
 from typing import TYPE_CHECKING
 from typing import NamedTuple
 
-from rubiks_cube.configuration.enumeration import SolveStrategy
+from rubiks_cube.configuration.enumeration import SearchSide
 from rubiks_cube.configuration.enumeration import Status
 
 if TYPE_CHECKING:
@@ -43,7 +43,7 @@ class PermutationSolver(ABC):
         min_search_depth: int,
         max_search_depth: int,
         max_time: float,
-        solve_strategy: SolveStrategy = SolveStrategy.normal,
+        side: SearchSide = SearchSide.normal,
     ) -> SearchSummary: ...
 
     @abstractmethod
@@ -54,5 +54,5 @@ class PermutationSolver(ABC):
         min_search_depth: int,
         max_search_depth: int,
         max_time: float,
-        solve_strategy: SolveStrategy = SolveStrategy.normal,
+        side: SearchSide = SearchSide.normal,
     ) -> SearchManySummary: ...

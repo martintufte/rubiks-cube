@@ -6,6 +6,7 @@ import numpy as np
 
 from rubiks_cube.configuration import DEFAULT_GENERATOR
 from rubiks_cube.configuration.enumeration import Goal
+from rubiks_cube.configuration.enumeration import SearchSide
 from rubiks_cube.configuration.enumeration import SolveStrategy
 from rubiks_cube.configuration.enumeration import Status
 from rubiks_cube.move.generator import MoveGenerator
@@ -111,10 +112,10 @@ def test_solve_strategy_both_merges_and_deduplicates(
             min_search_depth: int,
             max_search_depth: int,
             max_time: float,
-            solve_strategy: SolveStrategy = SolveStrategy.normal,
+            side: SearchSide = SearchSide.normal,
         ) -> SearchSummary:
             del permutation, max_solutions, min_search_depth, max_search_depth, max_time
-            if solve_strategy is SolveStrategy.inverse:
+            if side is SearchSide.inverse:
                 return SearchSummary(
                     solutions=[
                         MoveSequence.from_str("(R)"),
@@ -185,10 +186,10 @@ def test_solve_pattern_aggregates_multi_pattern_summaries(
             min_search_depth: int,
             max_search_depth: int,
             max_time: float,
-            solve_strategy: SolveStrategy = SolveStrategy.normal,
+            side: SearchSide = SearchSide.normal,
         ) -> SearchSummary:
             del permutation, max_solutions, min_search_depth, max_search_depth, max_time
-            del solve_strategy
+            del side
             if self.pattern == "p1":
                 return SearchSummary(
                     solutions=[MoveSequence.from_str("R")],
@@ -257,7 +258,7 @@ def test_bidirectional_solver_search_many_returns_rooted_solutions() -> None:
         min_search_depth=0,
         max_search_depth=1,
         max_time=10.0,
-        solve_strategy=SolveStrategy.normal,
+        side=SearchSide.normal,
     )
 
     assert summary.status is Status.Success
