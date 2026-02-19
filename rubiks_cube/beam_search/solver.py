@@ -251,7 +251,6 @@ def beam_search(
 
     contexts = build_step_contexts(plan=plan, cube_size=cube_size)
     permutation = get_rubiks_cube_permutation(sequence=sequence, cube_size=cube_size)
-    move_meta = MoveMeta.from_cube_size(cube_size=cube_size)
 
     beam: list[BeamCandidate] = [
         BeamCandidate(
@@ -278,11 +277,11 @@ def beam_search(
                 break
 
             step_time = max_time - elapsed
+            variations = [candidate]
 
-            if step_options.step.transition.look_for_prev_variations:
+            if step_options.step.transition.expand_variations:
+                move_meta = MoveMeta.from_cube_size(cube_size=cube_size)
                 variations = expand_variantions(candidate=candidate, move_meta=move_meta)
-            else:
-                variations = [candidate]
 
             permutations = [variation.permutation for variation in variations]
             step_contexts = step_options.contexts_for_prev_goal(candidate.prev_goal)
