@@ -17,22 +17,6 @@ def strip_move(move: str) -> str:
     return move
 
 
-def undecorate_move(move: str) -> tuple[str, bool]:
-    """Undecorate a move with parentheses.
-
-    Args:
-        move (str): Move to unstrip.
-
-    Returns:
-        tuple[str, bool]: Unstripped move, niss.
-    """
-    niss = False
-    if move.startswith("(") and move.endswith(")"):
-        niss = True
-        move = move[1:-1]
-    return move, niss
-
-
 def decorate_move(move: str, niss: bool = False) -> str:
     """Decorate a move with parentheses.
 
