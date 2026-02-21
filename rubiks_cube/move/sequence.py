@@ -18,17 +18,16 @@ from rubiks_cube.configuration import DEFAULT_METRIC
 from rubiks_cube.configuration.regex import MOVE_REGEX
 from rubiks_cube.configuration.regex import SLICE_PATTERN
 from rubiks_cube.configuration.regex import WIDE_PATTERN
+from rubiks_cube.move.formatting import format_string
 from rubiks_cube.move.metrics import measure_moves
 from rubiks_cube.move.utils import combine_rotations
 from rubiks_cube.move.utils import invert_move
 from rubiks_cube.move.utils import is_rotation
 from rubiks_cube.move.utils import rotate_move
-from rubiks_cube.parsing.decorator import decorate_move
-from rubiks_cube.parsing.decorator import strip_move
-from rubiks_cube.parsing.string import format_string
+from rubiks_cube.move.utils import strip_move
+from rubiks_cube.move.utils import unstrip_move
 
 if TYPE_CHECKING:
-
     from rubiks_cube.configuration.enumeration import Metric
     from rubiks_cube.move.meta import MoveMeta
 
@@ -52,7 +51,7 @@ class MoveSequence(Sequence[str]):
 
     @property
     def moves(self) -> list[str]:
-        return [*self.normal, *(decorate_move(move, niss=True) for move in self.inverse)]
+        return [*self.normal, *(unstrip_move(move) for move in self.inverse)]
 
     @classmethod
     def from_str(cls, string: str) -> MoveSequence:
@@ -144,7 +143,7 @@ class MoveSequence(Sequence[str]):
                 raise IndexError("Invalid index provided for MoveSequence.")
             if index < n_normal:
                 return self.normal[index]
-            return decorate_move(self.inverse[index - n_normal], niss=True)
+            return unstrip_move(self.inverse[index - n_normal])
 
         if isinstance(index, slice):
             return self.moves[index]
@@ -154,7 +153,7 @@ class MoveSequence(Sequence[str]):
     def __iter__(self) -> Iterator[str]:
         yield from self.normal
         for move in self.inverse:
-            yield decorate_move(move, niss=True)
+            yield unstrip_move(move)
 
     def __contains__(self, item: object) -> bool:
         return item in self.moves

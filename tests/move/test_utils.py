@@ -1,7 +1,9 @@
+from __future__ import annotations
+
 import pytest
 
-from rubiks_cube.parsing.decorator import decorate_move
-from rubiks_cube.parsing.decorator import strip_move
+from rubiks_cube.move.utils import strip_move
+from rubiks_cube.move.utils import unstrip_move
 
 
 class TestDecorateMove:
@@ -9,6 +11,8 @@ class TestDecorateMove:
         "move",
         [
             ("R"),
+            ("(R"),
+            ("R)"),
             ("(R)"),
         ],
     )
@@ -17,12 +21,14 @@ class TestDecorateMove:
         assert strip_move(move) == "R"
 
     @pytest.mark.parametrize(
-        "move, niss, expected",
+        "move",
         [
-            ("R", False, "R"),
-            ("R", True, "(R)"),
+            ("R"),
+            ("(R"),
+            ("R)"),
+            ("(R)"),
         ],
     )
-    def test_decorate_move(self, move: str, niss: bool, expected: str) -> None:
+    def test_unstrip_move(self, move: str) -> None:
         """Test that decorated moves are decorated correctly."""
-        assert decorate_move(move, niss) == expected
+        assert unstrip_move(move) == "(R)"
