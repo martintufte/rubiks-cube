@@ -1,6 +1,7 @@
-from rubiks_cube.move.sequence import MoveSequence
+import pytest
+
+from rubiks_cube.formatting.parsing import parse_steps
 from rubiks_cube.move.steps import MoveSteps
-from rubiks_cube.parsing import parse_steps
 
 
 def test_parse_steps_returns_move_steps() -> None:
@@ -15,6 +16,9 @@ def test_parse_steps_empty_input() -> None:
     assert parsed == MoveSteps()
 
 
-def test_parse_steps_skeleton_mode_returns_single_step() -> None:
-    parsed = parse_steps("-> R U R' U'")
-    assert parsed == MoveSteps([MoveSequence.from_str("R U R' U'")])
+def test_parse_steps_rejects_skeleton_mode() -> None:
+    with pytest.raises(
+        ValueError,
+        match=r"Definitions, substitutions, and skeleton syntax are not supported at line 1\.",
+    ):
+        parse_steps("-> R U R' U'")

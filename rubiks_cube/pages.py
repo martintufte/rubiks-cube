@@ -20,6 +20,8 @@ from rubiks_cube.configuration import DEFAULT_METRIC
 from rubiks_cube.configuration.enumeration import Goal
 from rubiks_cube.configuration.enumeration import SolveStrategy
 from rubiks_cube.configuration.enumeration import Status
+from rubiks_cube.formatting.parsing import parse_scramble
+from rubiks_cube.formatting.parsing import parse_steps
 from rubiks_cube.graphics.horizontal import plot_permutation
 from rubiks_cube.move.generator import MoveGenerator
 from rubiks_cube.move.meta import MoveMeta
@@ -27,8 +29,6 @@ from rubiks_cube.move.sequence import MoveSequence
 from rubiks_cube.move.sequence import cleanup
 from rubiks_cube.move.sequence import measure
 from rubiks_cube.move.sequence import unniss
-from rubiks_cube.parsing import parse_scramble
-from rubiks_cube.parsing import parse_steps
 from rubiks_cube.representation import get_rubiks_cube_permutation
 from rubiks_cube.representation.utils import invert
 from rubiks_cube.solver import solve_pattern
