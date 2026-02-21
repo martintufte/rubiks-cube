@@ -15,17 +15,17 @@ from attrs import validators
 
 from rubiks_cube.configuration import CUBE_SIZE
 from rubiks_cube.configuration import DEFAULT_METRIC
-from rubiks_cube.formatting.decorator import decorate_move
-from rubiks_cube.formatting.decorator import strip_move
-from rubiks_cube.formatting.regex import MOVE_REGEX
-from rubiks_cube.formatting.regex import SLICE_PATTERN
-from rubiks_cube.formatting.regex import WIDE_PATTERN
-from rubiks_cube.formatting.string import format_string
+from rubiks_cube.configuration.regex import MOVE_REGEX
+from rubiks_cube.configuration.regex import SLICE_PATTERN
+from rubiks_cube.configuration.regex import WIDE_PATTERN
 from rubiks_cube.move.metrics import measure_moves
 from rubiks_cube.move.utils import combine_rotations
 from rubiks_cube.move.utils import invert_move
 from rubiks_cube.move.utils import is_rotation
 from rubiks_cube.move.utils import rotate_move
+from rubiks_cube.parsing.decorator import decorate_move
+from rubiks_cube.parsing.decorator import strip_move
+from rubiks_cube.parsing.string import format_string
 
 if TYPE_CHECKING:
 

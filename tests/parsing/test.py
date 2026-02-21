@@ -1,7 +1,7 @@
 import pytest
 
-from rubiks_cube.formatting.parsing import parse_steps
 from rubiks_cube.move.steps import MoveSteps
+from rubiks_cube.parsing import parse_steps
 
 
 def test_parse_steps_returns_move_steps() -> None:

@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import re
 
-from rubiks_cube.formatting.regex import ROTATION_SEARCH
+from rubiks_cube.configuration.regex import ROTATION_SEARCH
 from rubiks_cube.move.rotation_magic import IDENTITY_ROTATION_STATE
 from rubiks_cube.move.rotation_magic import ROTATION_SOLUTIONS
 from rubiks_cube.move.rotation_magic import ROTATION_TRANSITION_TABLE

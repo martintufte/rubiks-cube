@@ -1,10 +1,10 @@
 from __future__ import annotations
 
-from rubiks_cube.formatting.string import is_valid_symbols
-from rubiks_cube.formatting.string import replace_confusing_chars
-from rubiks_cube.formatting.string import strip_comments
 from rubiks_cube.move.sequence import MoveSequence
 from rubiks_cube.move.steps import MoveSteps
+from rubiks_cube.parsing.string import is_valid_symbols
+from rubiks_cube.parsing.string import replace_confusing_chars
+from rubiks_cube.parsing.string import strip_comments
 
 
 def parse_scramble(raw_scramble: str) -> MoveSequence:

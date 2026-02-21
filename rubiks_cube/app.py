@@ -9,10 +9,10 @@ import streamlit as st
 
 from rubiks_cube.configuration.logging import configure_logging
 from rubiks_cube.configuration.paths import DATA_DIR
-from rubiks_cube.formatting.parsing import parse_scramble
-from rubiks_cube.formatting.parsing import parse_steps
 from rubiks_cube.pages import docs
 from rubiks_cube.pages import solver
+from rubiks_cube.parsing import parse_scramble
+from rubiks_cube.parsing import parse_steps
 
 st.set_page_config(
     page_title="Spruce 🌲",

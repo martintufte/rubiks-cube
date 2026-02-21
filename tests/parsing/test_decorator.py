@@ -1,8 +1,8 @@
 import pytest
 
-from rubiks_cube.formatting.decorator import decorate_move
-from rubiks_cube.formatting.decorator import strip_move
-from rubiks_cube.formatting.decorator import undecorate_move
+from rubiks_cube.parsing.decorator import decorate_move
+from rubiks_cube.parsing.decorator import strip_move
+from rubiks_cube.parsing.decorator import undecorate_move
 
 
 class TestDecorateMove:
