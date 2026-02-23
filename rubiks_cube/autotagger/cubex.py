@@ -51,19 +51,18 @@ class Cubex:
         self,
         patterns: list[CubePattern],
         names: list[str],
-        symmetry: Symmetry | None = None,
-        combinations: int | None = None,
         keep: bool = True,
+        combinations: int | None = None,
+        symmetry: Symmetry | None = None,
     ) -> None:
-        """
-        Initialize the cube expression.
+        """Initialize the cube expression.
 
         Args:
             patterns (list[CubePattern]): List over patterns.
             names (list[str]): Names of the patterns.
-            symmetry (Symmetry | None, optional): Symmetries. Defaults to None.
-            combinations (int | None, optional): Number of combinations. Defaults to None.
             keep (bool, optional): Whether to keep the pattern. Defaults to True.
+            combinations (int | None, optional): Number of combinations. Defaults to None.
+            symmetry (Symmetry | None, optional): Symmetries. Defaults to None.
         """
         self.patterns = patterns
         self.names = names
