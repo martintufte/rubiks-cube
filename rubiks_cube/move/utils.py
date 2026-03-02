@@ -20,18 +20,6 @@ def is_rotation(move: str) -> bool:
     return bool(re.search(ROTATION_SEARCH, move))
 
 
-def is_niss(move: str) -> bool:
-    """Check if the move is a NISS move.
-
-    Args:
-        move (str): Move to check.
-
-    Returns:
-        bool: Whether the move is a NISS move.
-    """
-    return move.startswith("(") and move.endswith(")")
-
-
 def invert_move(move: str) -> str:
     """Invert a move.
 
@@ -44,12 +32,6 @@ def invert_move(move: str) -> str:
     if move.endswith("2"):
         return move
     return move[:-1] if move.endswith("'") else move + "'"
-
-
-def niss_move(move: str) -> str:
-    if is_niss(move):
-        return move[1:-1]
-    return "(" + move + ")"
 
 
 def rotate_move(move: str, rotation: str) -> str:
