@@ -20,12 +20,12 @@ from rubiks_cube.configuration.regex import SLICE_PATTERN
 from rubiks_cube.configuration.regex import WIDE_PATTERN
 from rubiks_cube.move.formatting import format_string
 from rubiks_cube.move.metrics import measure_moves
-from rubiks_cube.move.utils import combine_rotations
 from rubiks_cube.move.utils import invert_move
 from rubiks_cube.move.utils import is_rotation
 from rubiks_cube.move.utils import rotate_move
 from rubiks_cube.move.utils import strip_move
 from rubiks_cube.move.utils import unstrip_move
+from rubiks_cube.representation.rotation import canonicalize_rotations
 
 if TYPE_CHECKING:
     from rubiks_cube.configuration.enumeration import Metric
@@ -317,19 +317,19 @@ def replace_wide_moves(sequence: MoveSequence, cube_size: int = CUBE_SIZE) -> No
 
 
 def _shift_rotations_to_end_side(moves: list[str]) -> list[str]:
-    rotation_list: list[str] = []
-    output_list: list[str] = []
+    output_rotations: list[str] = []
+    output_moves: list[str] = []
 
     for move in moves:
         if is_rotation(move):
-            rotation_list.append(move)
+            output_rotations.append(move)
         else:
             rotated_move = move
-            for rotation in reversed(rotation_list):
+            for rotation in reversed(output_rotations):
                 rotated_move = rotate_move(rotated_move, rotation)
-            output_list.append(rotated_move)
+            output_moves.append(rotated_move)
 
-    return output_list + combine_rotations(rotation_list)
+    return output_moves + canonicalize_rotations(output_rotations)
 
 
 def shift_rotations_to_end(sequence: MoveSequence) -> None:
@@ -337,6 +337,7 @@ def shift_rotations_to_end(sequence: MoveSequence) -> None:
 
     Args:
         sequence (MoveSequence): Move sequence.
+        move_meta (MoveMeta): Move meta configuration.
     """
     sequence.normal = _shift_rotations_to_end_side(sequence.normal)
     sequence.inverse = _shift_rotations_to_end_side(sequence.inverse)

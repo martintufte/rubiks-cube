@@ -6,10 +6,9 @@ from typing import TYPE_CHECKING
 
 import numpy as np
 
-from rubiks_cube.group.so3 import DEFAULT_STATE_ORDER
-from rubiks_cube.group.so3 import get_canonical_sequence
 from rubiks_cube.move.sequence import MoveSequence
 from rubiks_cube.representation import get_rubiks_cube_permutation
+from rubiks_cube.representation.rotation import CANONICAL_ROTATION_SEQUENCES
 
 if TYPE_CHECKING:
     from rubiks_cube.configuration.types import CubeMask
@@ -20,13 +19,13 @@ LOGGER = logging.getLogger(__name__)
 
 
 @lru_cache(maxsize=10)
-def _standard_rotation_permutations(cube_size: int) -> tuple[CubePermutation, ...]:
+def standard_rotation_permutations(cube_size: int) -> tuple[CubePermutation, ...]:
     return tuple(
         get_rubiks_cube_permutation(
-            sequence=MoveSequence(list(get_canonical_sequence(state))),
+            sequence=MoveSequence(moves),
             cube_size=cube_size,
         )
-        for state in DEFAULT_STATE_ORDER
+        for moves in CANONICAL_ROTATION_SEQUENCES.values()
     )
 
 
@@ -57,7 +56,7 @@ def find_rotation_offset(
 
     not_affected_mask = ~affected_mask
 
-    for rotation in _standard_rotation_permutations(cube_size):
+    for rotation in standard_rotation_permutations(cube_size):
         if np.array_equal(rotation[not_affected_mask], permutation[not_affected_mask]):
             return rotation
 

@@ -3,8 +3,18 @@ from __future__ import annotations
 import re
 
 from rubiks_cube.configuration.regex import ROTATION_SEARCH
-from rubiks_cube.group.so3 import canonicalize_sequence
-from rubiks_cube.group.so3 import rotate_face
+
+ROTATION_FACE_MAPS: dict[str, dict[str, str]] = {
+    "x": {"F": "D", "D": "B", "B": "U", "U": "F"},
+    "x'": {"F": "U", "U": "B", "B": "D", "D": "F"},
+    "x2": {"F": "B", "U": "D", "B": "F", "D": "U"},
+    "y": {"F": "R", "L": "F", "B": "L", "R": "B"},
+    "y'": {"F": "L", "L": "B", "B": "R", "R": "F"},
+    "y2": {"F": "B", "L": "R", "B": "F", "R": "L"},
+    "z": {"U": "L", "R": "U", "D": "R", "L": "D"},
+    "z'": {"U": "R", "R": "D", "D": "L", "L": "U"},
+    "z2": {"U": "D", "R": "L", "D": "U", "L": "R"},
+}
 
 
 def is_rotation(move: str) -> bool:
@@ -45,21 +55,8 @@ def rotate_move(move: str, rotation: str) -> str:
     """
     assert is_rotation(rotation), f"Rotation {rotation} must be a rotation!"
     face = move[0]
-    new_face = rotate_face(face, rotation)
 
-    return move.replace(face, new_face)
-
-
-def combine_rotations(rotations: list[str]) -> list[str]:
-    """Collapse rotations in a sequence to a standard rotations.
-
-    Args:
-        rotations (list[str]): List of rotations.
-
-    Returns:
-        list[str]: List of canonical rotations.
-    """
-    return list(canonicalize_sequence(rotations))
+    return move.replace(face, ROTATION_FACE_MAPS[rotation].get(face, face))
 
 
 def strip_move(move: str) -> str:
