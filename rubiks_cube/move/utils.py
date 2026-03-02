@@ -3,9 +3,8 @@ from __future__ import annotations
 import re
 
 from rubiks_cube.configuration.regex import ROTATION_SEARCH
-from rubiks_cube.move.rotation_magic import IDENTITY_ROTATION_STATE
-from rubiks_cube.move.rotation_magic import ROTATION_SOLUTIONS
-from rubiks_cube.move.rotation_magic import ROTATION_TRANSITION_TABLE
+from rubiks_cube.group.so3 import canonicalize_sequence
+from rubiks_cube.group.so3 import rotate_face
 
 
 def is_rotation(move: str) -> bool:
@@ -45,38 +44,22 @@ def rotate_move(move: str, rotation: str) -> str:
         str: Rotated move.
     """
     assert is_rotation(rotation), f"Rotation {rotation} must be a rotation!"
-    rotation_moves_dict: dict[str, dict[str, str]] = {
-        "x": {"F": "D", "D": "B", "B": "U", "U": "F"},
-        "x'": {"F": "U", "U": "B", "B": "D", "D": "F"},
-        "x2": {"F": "B", "U": "D", "B": "F", "D": "U"},
-        "y": {"F": "R", "L": "F", "B": "L", "R": "B"},
-        "y'": {"F": "L", "L": "B", "B": "R", "R": "F"},
-        "y2": {"F": "B", "L": "R", "B": "F", "R": "L"},
-        "z": {"U": "L", "R": "U", "D": "R", "L": "D"},
-        "z'": {"U": "R", "R": "D", "D": "L", "L": "U"},
-        "z2": {"U": "D", "R": "L", "D": "U", "L": "R"},
-    }
     face = move[0]
-    new_face = rotation_moves_dict[rotation].get(face, face)
+    new_face = rotate_face(face, rotation)
 
     return move.replace(face, new_face)
 
 
-def combine_rotations(rotation_list: list[str]) -> list[str]:
+def combine_rotations(rotations: list[str]) -> list[str]:
     """Collapse rotations in a sequence to a standard rotations.
 
     Args:
-        rotation_list (list[str]): List of rotations.
+        rotations (list[str]): List of rotations.
 
     Returns:
-        list[str]: List of standard rotations.
+        list[str]: List of canonical rotations.
     """
-
-    current_state = IDENTITY_ROTATION_STATE
-    for rotation in rotation_list:
-        current_state = ROTATION_TRANSITION_TABLE[rotation][current_state]
-
-    return ROTATION_SOLUTIONS[current_state]
+    return list(canonicalize_sequence(rotations))
 
 
 def strip_move(move: str) -> str:

@@ -1,10 +1,13 @@
 from __future__ import annotations
 
 import logging
+from functools import lru_cache
 from typing import TYPE_CHECKING
 
 import numpy as np
 
+from rubiks_cube.group.so3 import DEFAULT_STATE_ORDER
+from rubiks_cube.group.so3 import get_canonical_sequence
 from rubiks_cube.move.sequence import MoveSequence
 from rubiks_cube.representation import get_rubiks_cube_permutation
 
@@ -16,7 +19,17 @@ if TYPE_CHECKING:
 LOGGER = logging.getLogger(__name__)
 
 
-# TODO: Reimplement
+@lru_cache(maxsize=10)
+def _standard_rotation_permutations(cube_size: int) -> tuple[CubePermutation, ...]:
+    return tuple(
+        get_rubiks_cube_permutation(
+            sequence=MoveSequence(list(get_canonical_sequence(state))),
+            cube_size=cube_size,
+        )
+        for state in DEFAULT_STATE_ORDER
+    )
+
+
 def find_rotation_offset(
     permutation: CubePermutation,
     affected_mask: CubeMask | None,
@@ -44,39 +57,7 @@ def find_rotation_offset(
 
     not_affected_mask = ~affected_mask
 
-    # Naming: XY, X is the up face, Y is the front face
-    standard_rotations = {
-        "UF": [],
-        "UL": ["y'"],
-        "UB": ["y2"],
-        "UR": ["y"],
-        "FU": ["x", "y2"],
-        "FL": ["x", "y'"],
-        "FD": ["x"],
-        "FR": ["x", "y"],
-        "RU": ["z'", "y'"],
-        "RF": ["z'"],
-        "RD": ["z'", "y"],
-        "RB": ["z'", "y2"],
-        "BU": ["x'"],
-        "BL": ["x'", "y'"],
-        "BD": ["x'", "y2"],
-        "BR": ["x'", "y"],
-        "LU": ["z", "y"],
-        "LF": ["z"],
-        "LD": ["z", "y'"],
-        "LB": ["z", "y2"],
-        "DF": ["z2"],
-        "DL": ["x2", "y'"],
-        "DB": ["x2"],
-        "DR": ["x2", "y"],
-    }
-
-    for rotation_sequence in standard_rotations.values():
-        rotation = get_rubiks_cube_permutation(
-            sequence=MoveSequence(rotation_sequence),
-            cube_size=cube_size,
-        )
+    for rotation in _standard_rotation_permutations(cube_size):
         if np.array_equal(rotation[not_affected_mask], permutation[not_affected_mask]):
             return rotation
 
