@@ -4,6 +4,7 @@ import re
 
 from rubiks_cube.configuration.regex import ROTATION_SEARCH
 
+# TODO: Consider not hardcoding
 ROTATION_FACE_MAPS: dict[str, dict[str, str]] = {
     "x": {"F": "D", "D": "B", "B": "U", "U": "F"},
     "x'": {"F": "U", "U": "B", "B": "D", "D": "F"},
@@ -29,6 +30,7 @@ def is_rotation(move: str) -> bool:
     return bool(re.search(ROTATION_SEARCH, move))
 
 
+# TODO: Consider not hardcoding, switch to MoveMeta
 def invert_move(move: str) -> str:
     """Invert a move.
 

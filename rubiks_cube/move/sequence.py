@@ -6,6 +6,7 @@ from collections.abc import Iterator
 from collections.abc import Sequence
 from typing import TYPE_CHECKING
 from typing import Any
+from typing import Final
 from typing import cast
 from typing import overload
 
@@ -245,7 +246,7 @@ def measure(sequence: MoveSequence, metric: Metric = DEFAULT_METRIC) -> int:
 
     Args:
         sequence (MoveSequence): Move sequence.
-        metric (str, optional): Metric to use. Defaults to METRIC.
+        metric (str, optional): Metric to use. Defaults to DEFAULT_METRIC.
 
     Returns:
         int: Length of the move sequence.
@@ -255,22 +256,36 @@ def measure(sequence: MoveSequence, metric: Metric = DEFAULT_METRIC) -> int:
     )
 
 
+# TODO: Consider not hardcoding
+SLICE_MAPPING: Final[dict[str, tuple[str, str, str]]] = {
+    "M": ("L'", "R", "x'"),
+    "E": ("U", "D'", "y'"),
+    "S": ("F'", "B", "z"),
+}
+
+
+# TODO: Consider not hardcoding
+WIDE_MAPPING: Final[dict[str, tuple[str, str, str]]] = {
+    "L": ("R", "x", "'"),
+    "R": ("L", "x", ""),
+    "F": ("B", "z", ""),
+    "B": ("F", "z", "'"),
+    "U": ("D", "y", ""),
+    "D": ("U", "y", "'"),
+}
+
+
 def replace_slice_moves(sequence: MoveSequence, move_meta: MoveMeta) -> None:
     """Inplace replace slice notation.
 
     Args:
         sequence (MoveSequence): Move sequence.
     """
-    slice_mapping = {
-        "M": ("L'", "R", "x'"),
-        "E": ("U", "D'", "y'"),
-        "S": ("F'", "B", "z"),
-    }
 
     def replace_match(match: re.Match[Any]) -> str:
         slice = match.group(1)
         turn_mod = match.group(2)
-        first, second, rot = slice_mapping[slice]
+        first, second, rot = SLICE_MAPPING[slice]
 
         combined = f"{first}{turn_mod} {second}{turn_mod} {rot}{turn_mod}"
         return combined.replace("''", "").replace("'2", "2")
@@ -285,14 +300,6 @@ def replace_wide_moves(sequence: MoveSequence, move_meta: MoveMeta) -> None:
         sequence (MoveSequence): Move sequence.
         cube_size (int, optional): Size of the cube. Defaults to CUBE_SIZE.
     """
-    wide_mapping = {
-        "L": ("R", "x", "'"),
-        "R": ("L", "x", ""),
-        "F": ("B", "z", ""),
-        "B": ("F", "z", "'"),
-        "U": ("D", "y", ""),
-        "D": ("U", "y", "'"),
-    }
 
     def replace_match(match: re.Match[Any]) -> str:
         wide = match.group(1) or "2"
@@ -304,7 +311,7 @@ def replace_wide_moves(sequence: MoveSequence, move_meta: MoveMeta) -> None:
         diff_mod = str(diff) if diff > 2 else ""
         turn_mod = match.group(3)
         move = match.group(2)
-        base, rot, rot_mod = wide_mapping[move]
+        base, rot, rot_mod = WIDE_MAPPING[move]
         rot_mod = f"{rot_mod}{turn_mod}".replace("''", "").replace("'2", "2")
 
         if diff < 1:
