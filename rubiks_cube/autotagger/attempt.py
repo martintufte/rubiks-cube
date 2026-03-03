@@ -111,7 +111,9 @@ class Attempt:
             str: Compiled string with scramble, steps, and final solution.
         """
         scramble_permutation = get_rubiks_cube_permutation(
-            sequence=self.scramble, orientate_after=True
+            sequence=self.scramble,
+            move_meta=self.move_meta,
+            orientate_after=True,
         )
 
         self.tags = []
@@ -123,6 +125,7 @@ class Attempt:
             initial_sequence = sum(self.steps[:i], start=MoveSequence())
             initial_permutation = get_rubiks_cube_permutation(
                 sequence=initial_sequence,
+                move_meta=self.move_meta,
                 initial_permutation=scramble_permutation,
                 orientate_after=True,
             )
@@ -131,13 +134,11 @@ class Attempt:
             final_sequence = sum(self.steps[: i + 1], start=MoveSequence())
             final_permutation = get_rubiks_cube_permutation(
                 sequence=final_sequence,
+                move_meta=self.move_meta,
                 initial_permutation=scramble_permutation,
                 orientate_after=True,
-                cube_size=self.move_meta.cube_size,
             )
-            if np.array_equal(
-                final_permutation, get_identity_permutation(cube_size=self.move_meta.cube_size)
-            ):
+            if np.array_equal(final_permutation, self.move_meta.get_identity_permutation()):
                 final_sequence = unniss(final_sequence)
 
             tag = autotag_step(initial_permutation, final_permutation)
@@ -170,6 +171,7 @@ class Attempt:
 
         permutation = get_rubiks_cube_permutation(
             sequence=self.scramble + final_solution,
+            move_meta=self.move_meta,
             orientate_after=True,
         )
         if np.array_equal(permutation, get_identity_permutation(self.move_meta.cube_size)):

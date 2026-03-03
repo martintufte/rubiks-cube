@@ -13,7 +13,6 @@ from attrs import define
 from attrs import field
 from attrs import validators
 
-from rubiks_cube.configuration import CUBE_SIZE
 from rubiks_cube.configuration import DEFAULT_METRIC
 from rubiks_cube.configuration.regex import MOVE_REGEX
 from rubiks_cube.configuration.regex import SLICE_PATTERN
@@ -256,7 +255,7 @@ def measure(sequence: MoveSequence, metric: Metric = DEFAULT_METRIC) -> int:
     )
 
 
-def replace_slice_moves(sequence: MoveSequence) -> None:
+def replace_slice_moves(sequence: MoveSequence, move_meta: MoveMeta) -> None:
     """Inplace replace slice notation.
 
     Args:
@@ -279,7 +278,7 @@ def replace_slice_moves(sequence: MoveSequence) -> None:
     sequence.apply(fn=lambda move: SLICE_PATTERN.sub(replace_match, move).split())
 
 
-def replace_wide_moves(sequence: MoveSequence, cube_size: int = CUBE_SIZE) -> None:
+def replace_wide_moves(sequence: MoveSequence, move_meta: MoveMeta) -> None:
     """Inplace replace wide notation wider than cube_size/2.
 
     Args:
@@ -297,8 +296,8 @@ def replace_wide_moves(sequence: MoveSequence, cube_size: int = CUBE_SIZE) -> No
 
     def replace_match(match: re.Match[Any]) -> str:
         wide = match.group(1) or "2"
-        diff = cube_size - int(wide)
-        if diff >= cube_size / 2:
+        diff = move_meta.cube_size - int(wide)
+        if diff >= move_meta.cube_size / 2:
             return cast("str", match.string)
 
         wide_mod = "w" if diff > 1 else ""
@@ -467,15 +466,16 @@ def cleanup(sequence: MoveSequence, move_meta: MoveMeta) -> MoveSequence:
     """
     normal_seq, inverse_seq = decompose(sequence)
 
-    replace_wide_moves(normal_seq, cube_size=move_meta.cube_size)
-    replace_slice_moves(normal_seq)
+    replace_wide_moves(normal_seq, move_meta)
+    replace_slice_moves(normal_seq, move_meta)
     shift_rotations_to_end(normal_seq, move_meta)
     try_cancel_moves(normal_seq, move_meta)
 
-    replace_wide_moves(inverse_seq, cube_size=move_meta.cube_size)
-    replace_slice_moves(inverse_seq)
+    replace_wide_moves(inverse_seq, move_meta)
+    replace_slice_moves(inverse_seq, move_meta)
     shift_rotations_to_end(inverse_seq, move_meta)
     try_cancel_moves(inverse_seq, move_meta)
+
     niss(inverse_seq)
 
     return normal_seq + inverse_seq

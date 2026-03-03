@@ -204,7 +204,9 @@ def test_try_cancel_moves(move: str, expected: str) -> None:
 def test_replace_wide_moves_3x3(move: str, expected: str) -> None:
     """Test wide move replacement for 3x3 cube."""
     seq = MoveSequence.from_str(move)
-    replace_wide_moves(seq, cube_size=3)
+    move_meta = MoveMeta.from_cube_size(3)
+
+    replace_wide_moves(seq, move_meta)
     assert seq == MoveSequence.from_str(expected)
 
 
@@ -224,7 +226,9 @@ def test_replace_wide_moves_3x3(move: str, expected: str) -> None:
 def test_replace_wide_moves_9x9(move: str, expected: str) -> None:
     """Test wide move replacement for 9x9 cube."""
     seq = MoveSequence.from_str(move)
-    replace_wide_moves(seq, cube_size=9)
+    move_meta = MoveMeta.from_cube_size(9)
+
+    replace_wide_moves(seq, move_meta)
     assert seq == MoveSequence.from_str(expected)
 
 
@@ -243,7 +247,9 @@ def test_replace_wide_moves_9x9(move: str, expected: str) -> None:
 def test_replace_wide_moves_outside_range(move: str, expected: str) -> None:
     """Test wide moves that exceed cube size convert to rotations."""
     seq = MoveSequence.from_str(move)
-    replace_wide_moves(seq, cube_size=3)
+    move_meta = MoveMeta.from_cube_size(3)
+
+    replace_wide_moves(seq, move_meta)
     assert seq == MoveSequence.from_str(expected)
 
 
@@ -260,7 +266,9 @@ def test_replace_wide_moves_outside_range(move: str, expected: str) -> None:
 def test_replace_slice_moves(move: str, expected: str) -> None:
     """Test slice move replacement."""
     seq = MoveSequence.from_str(move)
-    replace_slice_moves(seq)
+    move_meta = MoveMeta.from_cube_size(3)
+
+    replace_slice_moves(seq, move_meta)
     assert seq == MoveSequence.from_str(expected)
 
 
@@ -291,8 +299,9 @@ def test_cleanup() -> None:
     """Test sequence cleanup combines operations."""
     seq = MoveSequence.from_str("(R') L M' (S2) x2 (z)")
     move_meta = MoveMeta.from_cube_size(3)
-    cleaned_seq = cleanup(seq, move_meta)
-    assert cleaned_seq == MoveSequence.from_str("L2 R' x' (R' F2 B2 z')")
+
+    result = cleanup(seq, move_meta)
+    assert result == MoveSequence.from_str("L2 R' x' (R' F2 B2 z')")
 
 
 def test_invert() -> None:
