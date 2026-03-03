@@ -17,7 +17,6 @@ class MoveMeta:
 
     cube_size: int
     permutations: dict[str, CubePermutation]
-    rotations: dict[str, CubePermutation]
 
     # Properties
     rotation_moves: set[str]
@@ -30,7 +29,6 @@ class MoveMeta:
     def from_cube_size(cls, cube_size: int) -> MoveMeta:
         """Build MoveMeta for a given cube size."""
         permutations = create_permutations(cube_size=cube_size)
-        rotations = create_permutations(cube_size=1)
         identity_bytes = permutations["I"].tobytes()
 
         rotation_moves = {move for move in permutations if is_rotation(move)}
@@ -59,12 +57,8 @@ class MoveMeta:
         return cls(
             cube_size=cube_size,
             permutations=permutations,
-            rotations=rotations,
             rotation_moves=rotation_moves,
             legal_moves=legal_moves,
             compose=compose,
             commutes=commutes,
         )
-
-    def canonicalize_rotations(self, rotations: list[str]) -> list[str]:
-        return rotations
