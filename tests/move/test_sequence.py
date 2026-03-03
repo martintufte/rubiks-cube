@@ -4,7 +4,6 @@ from rubiks_cube.configuration.enumeration import Metric
 from rubiks_cube.move.meta import MoveMeta
 from rubiks_cube.move.sequence import MoveSequence
 from rubiks_cube.move.sequence import cleanup
-from rubiks_cube.move.sequence import decompose
 from rubiks_cube.move.sequence import measure
 from rubiks_cube.move.sequence import niss
 from rubiks_cube.move.sequence import replace_slice_moves
@@ -270,16 +269,6 @@ def test_replace_slice_moves(move: str, expected: str) -> None:
 
     replace_slice_moves(seq, move_meta)
     assert seq == MoveSequence.from_str(expected)
-
-
-def test_decompose() -> None:
-    """Test decomposing sequence into normal and inverse moves."""
-    seq = MoveSequence.from_str("R U (R' U') R2")
-    normal, inverse = decompose(seq)
-    assert seq.normal == ["R", "U", "R2"]
-    assert seq.inverse == ["R'", "U'"]
-    assert normal == MoveSequence.from_str("R U R2")
-    assert inverse == MoveSequence.from_str("R' U'")
 
 
 def test_unniss() -> None:

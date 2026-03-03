@@ -1,10 +1,10 @@
 from __future__ import annotations
 
+import copy
 import logging
 from typing import TYPE_CHECKING
 from typing import Final
 
-from rubiks_cube.move.sequence import decompose
 from rubiks_cube.move.sequence import replace_slice_moves
 from rubiks_cube.move.sequence import replace_wide_moves
 from rubiks_cube.move.sequence import shift_rotations_to_end
@@ -42,7 +42,7 @@ def get_rubiks_cube_permutation(
     Returns:
         CubePermutation: The Rubiks cube permutation.
     """
-
+    sequence = copy.deepcopy(sequence)
     permutations = move_meta.permutations
 
     # Create permutation
@@ -52,37 +52,26 @@ def get_rubiks_cube_permutation(
     else:
         permutation = get_identity_permutation(cube_size=move_meta.cube_size)
 
-    # Decompose the sequence into normal and inverse moves, with rotations at the end
-    normal_sequence, inverse_sequence = decompose(sequence)
+    # Safeguard for wide moves and slices
+    replace_wide_moves(sequence, move_meta)
+    replace_slice_moves(sequence, move_meta)
+
+    # Shift rotations to the end if orientate after
+    if orientate_after:
+        shift_rotations_to_end(sequence, move_meta)
 
     # Apply moves on inverse
-    if use_inverse and inverse_sequence:
-        # Safeguard for wide moves and slices
-        replace_wide_moves(inverse_sequence, move_meta)
-        replace_slice_moves(inverse_sequence, move_meta)
-
-        # Shift rotations to the end is orientate after
-        if orientate_after:
-            shift_rotations_to_end(inverse_sequence, move_meta)
-
+    if use_inverse and sequence.inverse:
         inverted_permutation = invert(permutation)
-        for move in inverse_sequence:
+        for move in sequence.inverse:
             if orientate_after and is_rotation(move):
                 break
             inverted_permutation = inverted_permutation[permutations[move]]
         permutation = invert(inverted_permutation)
 
     # Apply moves on normal
-    if normal_sequence:
-        # Safeguard for wide moves and slices
-        replace_wide_moves(normal_sequence, move_meta)
-        replace_slice_moves(normal_sequence, move_meta)
-
-        # Shift rotations to the end if orientate after
-        if orientate_after:
-            shift_rotations_to_end(normal_sequence, move_meta)
-
-        for move in normal_sequence:
+    if sequence.normal:
+        for move in sequence.normal:
             if orientate_after and is_rotation(move):
                 break
             permutation = permutation[permutations[move]]

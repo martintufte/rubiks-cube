@@ -405,21 +405,6 @@ def try_cancel_moves(sequence: MoveSequence, move_meta: MoveMeta) -> None:
     sequence.inverse = _try_cancel_side(sequence.inverse, move_meta)
 
 
-def decompose(sequence: MoveSequence) -> tuple[MoveSequence, MoveSequence]:
-    """Decompose a move sequence into normal and inverse moves.
-
-    Args:
-        sequence (MoveSequence): Move sequence.
-
-    Returns:
-        tuple[MoveSequence, MoveSequence]: Normal and inverse move sequences.
-    """
-    return (
-        MoveSequence(normal=sequence.normal),
-        MoveSequence(normal=sequence.inverse),
-    )
-
-
 def niss(sequence: MoveSequence) -> None:
     """Inplace niss a move sequence.
 
@@ -464,18 +449,9 @@ def cleanup(sequence: MoveSequence, move_meta: MoveMeta) -> MoveSequence:
     Returns:
         MoveSequence: Cleaned move sequence.
     """
-    normal_seq, inverse_seq = decompose(sequence)
+    replace_wide_moves(sequence, move_meta)
+    replace_slice_moves(sequence, move_meta)
+    shift_rotations_to_end(sequence, move_meta)
+    try_cancel_moves(sequence, move_meta)
 
-    replace_wide_moves(normal_seq, move_meta)
-    replace_slice_moves(normal_seq, move_meta)
-    shift_rotations_to_end(normal_seq, move_meta)
-    try_cancel_moves(normal_seq, move_meta)
-
-    replace_wide_moves(inverse_seq, move_meta)
-    replace_slice_moves(inverse_seq, move_meta)
-    shift_rotations_to_end(inverse_seq, move_meta)
-    try_cancel_moves(inverse_seq, move_meta)
-
-    niss(inverse_seq)
-
-    return normal_seq + inverse_seq
+    return sequence
