@@ -36,6 +36,7 @@ def test_beam_search_transition_switch_solves_on_inverse() -> None:
     assert summary.solutions
     assert len(summary.solutions[0].sequence) == 1
     assert isinstance(summary.solutions[0].steps, MoveSteps)
+    assert len(summary.solutions[0].sequence.inverse) > 0
 
 
 def test_beam_search_transition_both_keeps_both_sides() -> None:

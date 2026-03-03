@@ -6,6 +6,8 @@ from typing import TYPE_CHECKING
 
 from rubiks_cube.move.utils import is_rotation
 from rubiks_cube.representation.permutation import create_permutations
+from rubiks_cube.representation.rotation import canonicalize_rotations
+from rubiks_cube.representation.utils import get_identity
 
 if TYPE_CHECKING:
     from rubiks_cube.configuration.types import CubePermutation
@@ -23,6 +25,15 @@ class MoveMeta:
     legal_moves: set[str]
     compose: dict[tuple[str, str], str]
     commutes: dict[str, set[str]]
+
+    @property
+    def size(self) -> int:
+        """Size of the permutations."""
+        return 6 * self.cube_size**2
+
+    def get_identity_permutation(self) -> CubePermutation:
+        """Return the identity permutation."""
+        return get_identity(size=self.size)
 
     @classmethod
     @lru_cache(maxsize=10)
@@ -62,3 +73,6 @@ class MoveMeta:
             compose=compose,
             commutes=commutes,
         )
+
+    def canonicalize_rotations(self, rotations: list[str]) -> list[str]:
+        return canonicalize_rotations(rotations=rotations)
