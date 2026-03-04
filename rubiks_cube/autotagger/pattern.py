@@ -12,7 +12,6 @@ import attrs
 import numpy as np
 
 from rubiks_cube.autotagger.subset import distinguish_htr
-from rubiks_cube.configuration import DEFAULT_CUBE_SIZE
 from rubiks_cube.configuration.enumeration import Goal
 from rubiks_cube.configuration.enumeration import Piece
 from rubiks_cube.configuration.enumeration import Symmetry
@@ -207,11 +206,11 @@ class Pattern:
 
 
 @lru_cache(maxsize=3)
-def get_patterns(cube_size: int = DEFAULT_CUBE_SIZE) -> dict[Goal, Pattern]:
+def get_patterns(cube_size: int) -> dict[Goal, Pattern]:
     """Return a dictionary of cube expressions for the cube size.
 
     Args:
-        cube_size (int, optional): Size of the cube. Defaults to CUBE_SIZE.
+        cube_size (int): Size of the cube.
 
     Returns:
         dict[str, Pattern]: Dictionary of goals with their patterns.
