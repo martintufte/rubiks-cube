@@ -2,8 +2,10 @@ from __future__ import annotations
 
 import re
 from dataclasses import dataclass
+from functools import cached_property
 from functools import lru_cache
 from typing import TYPE_CHECKING
+from typing import ClassVar
 from typing import Final
 from typing import Sequence
 
@@ -15,6 +17,25 @@ from rubiks_cube.representation.utils import invert
 
 if TYPE_CHECKING:
     from rubiks_cube.configuration.types import CubePermutation
+
+
+# TODO: Consider removing hardcoded slice subsitituition
+SLICE_MAPPING: Final[dict[str, tuple[str, str, str]]] = {
+    "M": ("L'", "R", "x'"),
+    "E": ("U", "D'", "y'"),
+    "S": ("F'", "B", "z"),
+}
+
+
+# TODO: Consider removing hardcoded wide subsitituition
+WIDE_MAPPING: Final[dict[str, tuple[str, str, str]]] = {
+    "L": ("R", "x", "'"),
+    "R": ("L", "x", ""),
+    "F": ("B", "z", ""),
+    "B": ("F", "z", "'"),
+    "U": ("D", "y", ""),
+    "D": ("U", "y", "'"),
+}
 
 
 # State (X, Y) means original X face points Up and original Y face points Front
@@ -47,7 +68,7 @@ CANONICAL_ROTATION_SEQUENCES: Final[dict[tuple[int, int], list[str]]] = {
 }
 
 
-# TODO(martin): Consider implementing the full Cayley table
+# TODO: Implement the full Cayley table for rotation group
 def canonicalize_rotations(rotations: Sequence[str]) -> list[str]:
     """Get the canonical rotation representation from the sequence."""
     state = get_identity_permutation(cube_size=1)
@@ -79,12 +100,16 @@ class MoveMeta:
     inverse_map: dict[str, str]
     conjugation_map: dict[tuple[str, str], str]
 
+    # Hardcoded properties
+    slice_mapping: ClassVar = SLICE_MAPPING
+    wide_mapping: ClassVar = WIDE_MAPPING
+
     @property
     def size(self) -> int:
         """Size of the permutations."""
         return 6 * self.cube_size**2
 
-    @property
+    @cached_property
     def has_parity(self) -> bool:
         """Check if the cube has parity."""
         return self.cube_size == 2 or self.cube_size > 3
