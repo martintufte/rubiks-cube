@@ -21,7 +21,7 @@ This is a page to track what is being worked on, ideas and finished work
   * [] IDA* solver, requires pruning tables
 
 * Progress/Done/Abandoned:
-  * [PROGRRESS] Use general knowledge derived from the permutations, not hardcoded
+  * [DONE] Use general knowledge derived from the permutations, not hardcoded
   * [DONE] Refactor so default cube size is only using for configuration
   * [DONE] Move pattern validator into Pattern class
   * [DONE] Rename Cubex to Pattern - more in line with name Spruce
