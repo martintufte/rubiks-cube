@@ -68,6 +68,7 @@ class PatternTagger(PermutationTagger):
             if step in DR_STEPS and final_subset is not None:
                 return f"{step} [{final_subset}]"
             return step
+
         step = f"{initial_tag} -> {final_tag}"
         if initial_tag == Goal.none.value != final_tag:
             return final_tag
@@ -103,29 +104,3 @@ def autotag_permutation(
         subset = None
 
     return f"{tag} [{subset}]" if subset is not None else tag
-
-
-def autotag_step(
-    initial_permutation: CubePermutation,
-    final_permutation: CubePermutation,
-    cube_size: int = DEFAULT_CUBE_SIZE,
-) -> str:
-    """Autotag the step between the initial and the final permutation.
-
-    Args:
-        initial_permutation (CubePermutation): Initial cube permutation.
-        final_permutation (CubePermutation): Final cube permutation.
-        cube_size (int, optional): Size of the cube. Defaults to CUBE_SIZE.
-
-    Returns:
-        str: Tag for the permutation.
-    """
-    # Setup the AutoTagger to use
-    autotagger = PatternTagger.from_cube_size(cube_size=cube_size)
-
-    tag = autotagger.tag_step(
-        initial_permutation=initial_permutation,
-        final_permutation=final_permutation,
-    )
-
-    return tag

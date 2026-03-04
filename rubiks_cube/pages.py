@@ -9,6 +9,7 @@ from typing import Final
 import streamlit as st
 from annotated_text import parameters
 
+from rubiks_cube.autotagger import PatternTagger
 from rubiks_cube.autotagger import autotag_permutation
 from rubiks_cube.autotagger.attempt import Attempt
 from rubiks_cube.autotagger.pattern import get_patterns
@@ -159,7 +160,8 @@ def solver(session: SessionStateProxy, cookie_manager: stx.CookieManager) -> Non
     all_cookies = app(session, cookie_manager, move_meta=move_meta)
 
     # Display the autotagger compiled solution
-    if st.session_state.get("autotagger_enabled", True):
+    if st.session_state.get("autotagger_enabled", False):
+        autotagger = PatternTagger.from_cube_size(DEFAULT_CUBE_SIZE)
         attempt = Attempt.from_scramble_and_steps(
             scramble=session["scramble"],
             steps=session["steps"],
@@ -167,7 +169,7 @@ def solver(session: SessionStateProxy, cookie_manager: stx.CookieManager) -> Non
             metric=DEFAULT_METRIC,
             cleanup_final=True,
         )
-        st.code(attempt.compile(width=80), language=None)
+        st.code(attempt.compile(autotagger, width=80), language=None)
 
     if st.session_state.get("solver_enabled", False):
         # Initialize solutions in session state if not present
