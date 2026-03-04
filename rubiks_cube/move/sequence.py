@@ -17,9 +17,9 @@ from rubiks_cube.configuration.regex import MOVE_REGEX
 from rubiks_cube.configuration.regex import SLICE_PATTERN
 from rubiks_cube.configuration.regex import WIDE_PATTERN
 from rubiks_cube.move.formatting import format_string
+from rubiks_cube.move.formatting import strip_move
+from rubiks_cube.move.formatting import unstrip_move
 from rubiks_cube.move.metrics import measure_moves
-from rubiks_cube.move.utils import strip_move
-from rubiks_cube.move.utils import unstrip_move
 
 if TYPE_CHECKING:
     from rubiks_cube.move.meta import MoveMeta
