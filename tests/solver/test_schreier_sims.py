@@ -6,6 +6,7 @@ from rubiks_cube.move.generator import MoveGenerator
 from rubiks_cube.move.meta import MoveMeta
 from rubiks_cube.move.sequence import MoveSequence
 from rubiks_cube.representation import get_rubiks_cube_permutation
+from rubiks_cube.representation.permutation import get_identity_permutation
 from rubiks_cube.solver.schreier_sims import is_solvable
 
 
@@ -14,7 +15,7 @@ class TestIsSolvable:
 
     def test_identity_with_empty_generator(self) -> None:
         """Test that identity is solvable with empty generator."""
-        identity = self.move_meta.get_identity_permutation()
+        identity = get_identity_permutation(self.move_meta.cube_size)
         generator = MoveGenerator.from_str("<>")
         assert is_solvable(identity, generator, cube_size=self.move_meta.cube_size)
 

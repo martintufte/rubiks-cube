@@ -342,7 +342,7 @@ def shift_rotations_to_end(sequence: MoveSequence, move_meta: MoveMeta) -> None:
     sequence.inverse = _shift_rotations_to_end_side(sequence.inverse, move_meta)
 
 
-def _try_cancel_side(moves: list[str], move_meta: MoveMeta) -> list[str]:
+def _cancel_side(moves: list[str], move_meta: MoveMeta) -> list[str]:
     def is_legal(move: str) -> bool:
         return move in move_meta.legal_moves
 
@@ -398,19 +398,10 @@ def _try_cancel_side(moves: list[str], move_meta: MoveMeta) -> list[str]:
     return output
 
 
-def try_cancel_moves(sequence: MoveSequence, move_meta: MoveMeta) -> None:
-    """Try to cancel and combine non-rotations using permutation closure and commutation."""
-    sequence.normal = _try_cancel_side(sequence.normal, move_meta)
-    sequence.inverse = _try_cancel_side(sequence.inverse, move_meta)
-
-
-def niss(sequence: MoveSequence) -> None:
-    """Inplace niss a move sequence.
-
-    Args:
-        sequence (MoveSequence): Move sequence.
-    """
-    sequence.normal, sequence.inverse = sequence.inverse, sequence.normal
+def cancel_moves(sequence: MoveSequence, move_meta: MoveMeta) -> None:
+    """Try to cancel and combine non-rotations using permutation composition and commutativity."""
+    sequence.normal = _cancel_side(sequence.normal, move_meta)
+    sequence.inverse = _cancel_side(sequence.inverse, move_meta)
 
 
 def unniss(sequence: MoveSequence, move_meta: MoveMeta) -> MoveSequence:
@@ -454,6 +445,6 @@ def cleanup(sequence: MoveSequence, move_meta: MoveMeta) -> MoveSequence:
     replace_wide_moves(sequence, move_meta)
     replace_slice_moves(sequence, move_meta)
     shift_rotations_to_end(sequence, move_meta)
-    try_cancel_moves(sequence, move_meta)
+    cancel_moves(sequence, move_meta)
 
     return sequence

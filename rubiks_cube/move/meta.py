@@ -10,7 +10,6 @@ from typing import Sequence
 from rubiks_cube.configuration.regex import ROTATION_SEARCH
 from rubiks_cube.representation.permutation import create_permutations
 from rubiks_cube.representation.permutation import get_identity_permutation
-from rubiks_cube.representation.utils import get_identity
 from rubiks_cube.representation.utils import invert
 
 if TYPE_CHECKING:
@@ -69,11 +68,11 @@ class MoveMeta:
     cube_size: int
     permutations: dict[str, CubePermutation]
 
-    # Groups
+    # Grouping
     rotation_moves: set[str]
     legal_moves: set[str]
 
-    # Albegric properties
+    # Algebraic properties
     compose: dict[tuple[str, str], str]
     commutes: dict[str, set[str]]
     inverse_map: dict[str, str]
@@ -83,10 +82,6 @@ class MoveMeta:
         """Size of the permutations."""
         return 6 * self.cube_size**2
 
-    def get_identity_permutation(self) -> CubePermutation:
-        """Return the identity permutation."""
-        return get_identity(size=self.size)
-
     @classmethod
     @lru_cache(maxsize=10)
     def from_cube_size(cls, cube_size: int) -> MoveMeta:
@@ -94,16 +89,16 @@ class MoveMeta:
         permutations = create_permutations(cube_size=cube_size)
         identity_bytes = permutations["I"].tobytes()
 
+        # Group move types
         rotation_moves = {move for move in permutations if bool(re.search(ROTATION_SEARCH, move))}
         legal_moves = {move for move in permutations if move != "I" and move not in rotation_moves}
         perm_by_move = {move: permutations[move] for move in legal_moves}
         move_by_perm_bytes = {perm_by_move[move].tobytes(): move for move in legal_moves}
 
+        # Look at all pairs of legal moves for composition, cummutativity and inversion
         compose: dict[tuple[str, str], str] = {}
         commutes: dict[str, set[str]] = {move: set() for move in legal_moves}
         inverse_map: dict[str, str] = {}
-
-        # Look at all pairs of legal moves for composition, cummutativity and inversion
         for move_a in legal_moves:
             perm_a = perm_by_move[move_a]
             for move_b in legal_moves:

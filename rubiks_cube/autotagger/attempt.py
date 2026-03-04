@@ -138,7 +138,9 @@ class Attempt:
                 initial_permutation=scramble_permutation,
                 orientate_after=True,
             )
-            if np.array_equal(final_permutation, self.move_meta.get_identity_permutation()):
+            if np.array_equal(
+                final_permutation, get_identity_permutation(self.move_meta.cube_size)
+            ):
                 final_sequence = unniss(final_sequence, self.move_meta)
 
             tag = autotag_step(initial_permutation, final_permutation)
