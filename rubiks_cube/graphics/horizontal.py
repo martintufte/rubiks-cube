@@ -5,7 +5,7 @@ from typing import TYPE_CHECKING
 import matplotlib.pyplot as plt
 from matplotlib.patches import Rectangle
 
-from rubiks_cube.configuration import CUBE_SIZE
+from rubiks_cube.configuration import DEFAULT_CUBE_SIZE
 from rubiks_cube.configuration.enumeration import Goal
 from rubiks_cube.graphics import get_colored_rubiks_cube
 
@@ -44,7 +44,7 @@ def plot_face(
     y_rel: float,
     padding: float,
     start_idx: int | None = None,
-    cube_size: int = CUBE_SIZE,
+    cube_size: int = DEFAULT_CUBE_SIZE,
     plot_text: bool = False,
 ) -> None:
     """Draw a face of the cube.
@@ -68,7 +68,7 @@ def plot_face(
             ax.text(x + 0.5, y + 0.5, str(start_idx + i), ha="center", va="center")
 
 
-def plot_colored_cube_2D(colored_cube: CubeColor, cube_size: int = CUBE_SIZE) -> Figure:
+def plot_colored_cube_2D(colored_cube: CubeColor, cube_size: int = DEFAULT_CUBE_SIZE) -> Figure:
     """Plot a cube string.
 
     Args:

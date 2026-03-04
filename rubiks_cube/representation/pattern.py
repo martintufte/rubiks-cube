@@ -10,29 +10,26 @@ import numpy as np
 from bidict import bidict
 from bidict._exc import ValueDuplicationError
 
-from rubiks_cube.configuration import CUBE_SIZE
+from rubiks_cube.configuration import DEFAULT_CUBE_SIZE
 from rubiks_cube.configuration.enumeration import Piece
 from rubiks_cube.configuration.enumeration import Symmetry
 from rubiks_cube.move.generator import MoveGenerator
+from rubiks_cube.move.meta import MoveMeta
 from rubiks_cube.move.sequence import MoveSequence
 from rubiks_cube.representation import get_rubiks_cube_permutation
 from rubiks_cube.representation.mask import get_single_piece_mask
-from rubiks_cube.representation.permutation import apply_moves_to_permutation
-from rubiks_cube.representation.permutation import get_identity_permutation
 from rubiks_cube.representation.symmetries import find_symmetry_groups
-from rubiks_cube.representation.utils import invert
 
 if TYPE_CHECKING:
     from collections.abc import Sequence
 
     from rubiks_cube.configuration.types import CubeMask
     from rubiks_cube.configuration.types import CubePattern
-    from rubiks_cube.move.meta import MoveMeta
 
 LOGGER: Final = logging.getLogger(__name__)
 
 
-def get_empty_pattern(cube_size: int = CUBE_SIZE) -> CubePattern:
+def get_empty_pattern(cube_size: int = DEFAULT_CUBE_SIZE) -> CubePattern:
     """Return the empty Rubik's cube pattern.
 
     Args:
@@ -46,7 +43,7 @@ def get_empty_pattern(cube_size: int = CUBE_SIZE) -> CubePattern:
     return np.zeros(6 * cube_size**2, dtype=int)
 
 
-def get_identity_pattern(cube_size: int = CUBE_SIZE) -> CubePattern:
+def get_identity_pattern(cube_size: int = DEFAULT_CUBE_SIZE) -> CubePattern:
     """Get the identity Rubik's cube pattern.
 
     Args:
@@ -61,7 +58,7 @@ def get_identity_pattern(cube_size: int = CUBE_SIZE) -> CubePattern:
     return pattern.astype(dtype=np.uint)
 
 
-def get_solved_pattern(cube_size: int = CUBE_SIZE) -> CubePattern:
+def get_solved_pattern(cube_size: int = DEFAULT_CUBE_SIZE) -> CubePattern:
     """Get the solved Rubik's cube pattern.
 
     Args:
@@ -106,7 +103,7 @@ def generate_pattern_symmetries(
     initial_pattern: CubePattern,
     generator: MoveGenerator | None = None,
     max_size: int = 24,
-    cube_size: int = CUBE_SIZE,
+    cube_size: int = DEFAULT_CUBE_SIZE,
 ) -> list[CubePattern]:
     """Generate list of pattern symmetries of the cube using the generator.
 
@@ -125,10 +122,10 @@ def generate_pattern_symmetries(
     if generator is None:
         generator = MoveGenerator.from_str("<x, y>")
 
-    identity = get_identity_permutation(cube_size=cube_size)
+    move_meta = MoveMeta.from_cube_size(cube_size)
+
     permutations = [
-        apply_moves_to_permutation(identity, sequence, cube_size=cube_size)
-        for sequence in generator
+        get_rubiks_cube_permutation(sequence, move_meta=move_meta) for sequence in generator
     ]
 
     list_of_patterns: list[CubePattern] = [initial_pattern]
@@ -155,35 +152,36 @@ def generate_pattern_symmetries(
 def generate_pattern_symmetries_from_subset(
     pattern: CubePattern,
     symmetry: Symmetry,
+    move_meta: MoveMeta,
     prefix: str = "",
-    cube_size: int = CUBE_SIZE,
 ) -> tuple[list[CubePattern], list[str]]:
     """Generate list of pattern symmetries of the cube using the subset as base.
 
     Args:
         pattern (CubePattern): Cube pattern.
         symmetry (Symmetry): Symmetry of the cube.
+        move_meta (MoveMeta): Meta information about moves.
         prefix (str, optional): Prefix of the symmetry. Defaults to "".
-        cube_size (int, optional): Size of the cube. Defaults to CUBE_SIZE.
 
     Returns:
         tuple[list[CubePattern], list[str]]: List of pattern symmetries and their names.
     """
     symmetry_group = find_symmetry_groups(symmetry)
 
-    identity = get_identity_permutation(cube_size=cube_size)
-    offset = apply_moves_to_permutation(
-        identity, MoveSequence(symmetry_group[symmetry]), cube_size=cube_size
+    inv_offset = get_rubiks_cube_permutation(
+        sequence=MoveSequence(normal=symmetry_group[symmetry]),
+        move_meta=move_meta,
+        invert_after=True,
     )
 
     list_of_patterns: list[CubePattern] = []
     list_of_names: list[str] = []
 
     for subset, moves in symmetry_group.items():
-        permutation = apply_moves_to_permutation(
-            invert(offset),
-            sequence=MoveSequence(moves),
-            cube_size=cube_size,
+        permutation = get_rubiks_cube_permutation(
+            sequence=MoveSequence(normal=moves),
+            move_meta=move_meta,
+            initial_permutation=inv_offset,
         )
 
         list_of_patterns.append(pattern[permutation])
@@ -308,7 +306,7 @@ def merge_patterns(patterns: Sequence[CubePattern]) -> CubePattern:
 
 
 @lru_cache(maxsize=None)
-def piece_masks(piece: Piece, cube_size: int = CUBE_SIZE) -> list[CubeMask]:
+def piece_masks(piece: Piece, cube_size: int = DEFAULT_CUBE_SIZE) -> list[CubeMask]:
     """Generate the symmetries of a piece.
 
     Args:
@@ -328,7 +326,7 @@ def piece_masks(piece: Piece, cube_size: int = CUBE_SIZE) -> list[CubeMask]:
     return [pattern2mask(symmetry) for symmetry in symmetries]
 
 
-def pattern_combinations(pattern: CubePattern, cube_size: int = CUBE_SIZE) -> int:
+def pattern_combinations(pattern: CubePattern, cube_size: int = DEFAULT_CUBE_SIZE) -> int:
     """Calculate the combinations of a pattern. Assumes that the pattern is rotated.
 
     Args:
@@ -350,7 +348,9 @@ def pattern_combinations(pattern: CubePattern, cube_size: int = CUBE_SIZE) -> in
 
 
 # TODO: This might not work for centers
-def piece_combinations(pattern: CubePattern, piece: Piece, cube_size: int = CUBE_SIZE) -> int:
+def piece_combinations(
+    pattern: CubePattern, piece: Piece, cube_size: int = DEFAULT_CUBE_SIZE
+) -> int:
     """Calculate the combinations of a piece in the pattern."""
     if cube_size == 1 or (cube_size == 2 and piece == Piece.edge):
         return 1

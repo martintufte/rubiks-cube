@@ -11,7 +11,7 @@ from rubiks_cube.autotagger.pattern import get_patterns
 from rubiks_cube.autotagger.step import DR_STEPS
 from rubiks_cube.autotagger.step import TAG_TO_TAG_STEPS
 from rubiks_cube.autotagger.subset import get_dr_subset_label
-from rubiks_cube.configuration import CUBE_SIZE
+from rubiks_cube.configuration import DEFAULT_CUBE_SIZE
 from rubiks_cube.configuration.enumeration import Goal
 
 if TYPE_CHECKING:
@@ -81,7 +81,7 @@ class PatternTagger(PermutationTagger):
 def autotag_permutation(
     permutation: CubePermutation,
     include_subset: bool = False,
-    cube_size: int = CUBE_SIZE,
+    cube_size: int = DEFAULT_CUBE_SIZE,
 ) -> str:
     """Autotag the permutation.
 
@@ -108,7 +108,7 @@ def autotag_permutation(
 def autotag_step(
     initial_permutation: CubePermutation,
     final_permutation: CubePermutation,
-    cube_size: int = CUBE_SIZE,
+    cube_size: int = DEFAULT_CUBE_SIZE,
 ) -> str:
     """Autotag the step between the initial and the final permutation.
 

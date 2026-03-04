@@ -4,7 +4,7 @@ import logging
 from typing import TYPE_CHECKING
 
 from rubiks_cube.autotagger.pattern import get_patterns
-from rubiks_cube.configuration import CUBE_SIZE
+from rubiks_cube.configuration import DEFAULT_CUBE_SIZE
 from rubiks_cube.configuration import DEFAULT_GENERATOR
 from rubiks_cube.configuration.enumeration import Goal
 from rubiks_cube.configuration.enumeration import SearchSide
@@ -34,7 +34,7 @@ def solve_pattern(
     max_search_depth: int = 10,
     max_solutions: int = 1,
     solve_strategy: SolveStrategy = SolveStrategy.normal,
-    cube_size: int = CUBE_SIZE,
+    cube_size: int = DEFAULT_CUBE_SIZE,
     max_time: float = 60.0,
 ) -> SearchSummary:
     """Solve a Rubik's cube goal pattern.
@@ -92,7 +92,7 @@ def solve_pattern(
     LOGGER.info(f"Solving with goal '{goal.name}' and strategy '{solve_strategy.value}'..")
     LOGGER.debug(f"Sequence: {sequence}")
 
-    move_meta = MoveMeta.from_cube_size(CUBE_SIZE)
+    move_meta = MoveMeta.from_cube_size(DEFAULT_CUBE_SIZE)
 
     actions = get_actions(move_meta=move_meta, generator=generator, algorithms=algorithms)
     pattern = get_patterns(cube_size=cube_size).get(goal)

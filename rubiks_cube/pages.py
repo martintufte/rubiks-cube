@@ -14,7 +14,7 @@ from rubiks_cube.autotagger.attempt import Attempt
 from rubiks_cube.autotagger.pattern import get_patterns
 from rubiks_cube.beam_search.plan import BEAM_PLANS
 from rubiks_cube.beam_search.solver import beam_search as solve_beam_search
-from rubiks_cube.configuration import CUBE_SIZE
+from rubiks_cube.configuration import DEFAULT_CUBE_SIZE
 from rubiks_cube.configuration import DEFAULT_GENERATOR
 from rubiks_cube.configuration import DEFAULT_METRIC
 from rubiks_cube.configuration.enumeration import Goal
@@ -155,7 +155,7 @@ def solver(session: SessionStateProxy, cookie_manager: stx.CookieManager) -> Non
         session (SessionStateProxy): Session state proxy.
         cookie_manager (stx.CookieManager): Cookie manager.
     """
-    move_meta = MoveMeta.from_cube_size(CUBE_SIZE)
+    move_meta = MoveMeta.from_cube_size(DEFAULT_CUBE_SIZE)
     all_cookies = app(session, cookie_manager, move_meta=move_meta)
 
     # Display the autotagger compiled solution
@@ -190,7 +190,7 @@ def solver(session: SessionStateProxy, cookie_manager: stx.CookieManager) -> Non
         # Use session state as the source of truth
         cached_solutions = session["solver_solutions"]
 
-        patterns = get_patterns(cube_size=CUBE_SIZE)
+        patterns = get_patterns(cube_size=DEFAULT_CUBE_SIZE)
         goal_options = [goal.value for goal in patterns]
 
         if Goal.htr.value not in goal_options:
@@ -277,7 +277,7 @@ def solver(session: SessionStateProxy, cookie_manager: stx.CookieManager) -> Non
             nonlocal cached_solutions
 
             steps_sequence = sum(session["steps"], start=MoveSequence())
-            move_meta = MoveMeta.from_cube_size(CUBE_SIZE)
+            move_meta = MoveMeta.from_cube_size(DEFAULT_CUBE_SIZE)
             cleaned_steps = cleanup(steps_sequence, move_meta)
             scramble_permutation = get_rubiks_cube_permutation(
                 sequence=session["scramble"],

@@ -6,7 +6,7 @@ from typing import Mapping
 
 import numpy as np
 
-from rubiks_cube.configuration import CUBE_SIZE
+from rubiks_cube.configuration import DEFAULT_CUBE_SIZE
 from rubiks_cube.configuration.enumeration import Goal
 
 if TYPE_CHECKING:
@@ -52,7 +52,7 @@ def get_colored_rubiks_cube(
     goal: Goal = Goal.solved,
     permutation: CubePermutation | None = None,
     color_scheme: Mapping[int, str] = DEFAULT_COLOR_SCHEME,
-    cube_size: int = CUBE_SIZE,
+    cube_size: int = DEFAULT_CUBE_SIZE,
 ) -> CubeColor:
     """Get a colored Rubik's cube from the permutation.
 

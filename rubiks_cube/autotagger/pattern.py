@@ -12,7 +12,7 @@ import attrs
 import numpy as np
 
 from rubiks_cube.autotagger.subset import distinguish_htr
-from rubiks_cube.configuration import CUBE_SIZE
+from rubiks_cube.configuration import DEFAULT_CUBE_SIZE
 from rubiks_cube.configuration.enumeration import Goal
 from rubiks_cube.configuration.enumeration import Piece
 from rubiks_cube.configuration.enumeration import Symmetry
@@ -155,7 +155,9 @@ class Pattern:
     @property
     def combinations(self) -> int:
         """Sum of the number of combinations for each pattern."""
-        n = sum(pattern_combinations(pattern, cube_size=CUBE_SIZE) for pattern in self.patterns)
+        n = sum(
+            pattern_combinations(pattern, cube_size=DEFAULT_CUBE_SIZE) for pattern in self.patterns
+        )
 
         # TODO: Fix hack for counting with validator. Right now, only htr has a validator
         if self.validator is not None:
@@ -182,7 +184,7 @@ class Pattern:
         """
         return log2(self.combinations)
 
-    def create_symmetries(self, cube_size: int = CUBE_SIZE) -> None:
+    def create_symmetries(self, move_meta: MoveMeta) -> None:
         """Create symmetries for the cube expression."""
         if self.symmetry is Symmetry.none:
             return
@@ -190,12 +192,12 @@ class Pattern:
         new_patterns = []
         new_names = []
 
-        for pattern, _name in zip(self.patterns, self.names, strict=False):
+        for pattern, _name in zip(self.patterns, self.names, strict=True):
             subset_patterns, subset_names = generate_pattern_symmetries_from_subset(
                 pattern=pattern,
                 symmetry=self.symmetry,
+                move_meta=move_meta,
                 prefix=self.names[0],
-                cube_size=cube_size,
             )
             new_patterns.extend(subset_patterns)
             new_names.extend(subset_names)
@@ -206,7 +208,7 @@ class Pattern:
 
 
 @lru_cache(maxsize=3)
-def get_patterns(cube_size: int = CUBE_SIZE) -> dict[Goal, Pattern]:
+def get_patterns(cube_size: int = DEFAULT_CUBE_SIZE) -> dict[Goal, Pattern]:
     """Return a dictionary of cube expressions for the cube size.
 
     Args:
@@ -301,7 +303,7 @@ def get_patterns(cube_size: int = CUBE_SIZE) -> dict[Goal, Pattern]:
 
     # Create symmetries for all patterns defined above
     for pattern in patterns.values():
-        pattern.create_symmetries(cube_size=cube_size)
+        pattern.create_symmetries(move_meta=move_meta)
 
     # Non-symmetric edge orientations
     edge_orientation_tags = {

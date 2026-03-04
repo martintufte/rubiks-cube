@@ -165,8 +165,8 @@ class TestGeneratePatternsFromSubset:
         patterns, names = generate_pattern_symmetries_from_subset(
             pattern=pattern.patterns[0],
             symmetry=Symmetry.down,
+            move_meta=move_meta,
             prefix="cross",
-            cube_size=move_meta.cube_size,
         )
 
         assert len(patterns) == 6

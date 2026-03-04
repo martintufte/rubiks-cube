@@ -4,11 +4,12 @@ from typing import TYPE_CHECKING
 
 import numpy as np
 
-from rubiks_cube.configuration import CUBE_SIZE
+from rubiks_cube.configuration import DEFAULT_CUBE_SIZE
 from rubiks_cube.configuration.enumeration import Piece
+from rubiks_cube.move.meta import MoveMeta
 from rubiks_cube.move.sequence import MoveSequence
-from rubiks_cube.representation.permutation import apply_moves_to_permutation
-from rubiks_cube.representation.permutation import get_identity_permutation
+from rubiks_cube.representation import get_rubiks_cube_permutation
+from rubiks_cube.representation.utils import get_identity
 
 if TYPE_CHECKING:
     from collections.abc import Sequence
@@ -16,7 +17,7 @@ if TYPE_CHECKING:
     from rubiks_cube.configuration.types import CubeMask
 
 
-def get_ones_mask(cube_size: int = CUBE_SIZE) -> CubeMask:
+def get_ones_mask(cube_size: int = DEFAULT_CUBE_SIZE) -> CubeMask:
     """Return the ones mask of the cube.
 
     Args:
@@ -30,7 +31,7 @@ def get_ones_mask(cube_size: int = CUBE_SIZE) -> CubeMask:
     return np.ones(6 * cube_size**2, dtype=bool)
 
 
-def get_zeros_mask(cube_size: int = CUBE_SIZE) -> CubeMask:
+def get_zeros_mask(cube_size: int = DEFAULT_CUBE_SIZE) -> CubeMask:
     """Return the zeros mask of the cube.
 
     Args:
@@ -61,7 +62,7 @@ def combine_masks(masks: Sequence[CubeMask]) -> CubeMask:
 
 def get_rubiks_cube_mask(
     sequence: MoveSequence | None = None,
-    cube_size: int = CUBE_SIZE,
+    cube_size: int = DEFAULT_CUBE_SIZE,
 ) -> CubeMask:
     """Create a boolean mask of pieces that remain solved after applying the sequence.
 
@@ -75,16 +76,17 @@ def get_rubiks_cube_mask(
     if sequence is None:
         sequence = MoveSequence()
 
-    identity_permutation = get_identity_permutation(cube_size=cube_size)
-    permutation = apply_moves_to_permutation(identity_permutation, sequence, cube_size)
+    move_meta = MoveMeta.from_cube_size(cube_size)
+
+    permutation = get_rubiks_cube_permutation(sequence, move_meta=move_meta)
 
     mask: CubeMask
-    mask = permutation == identity_permutation
+    mask = permutation == get_identity(permutation.size)
 
     return mask
 
 
-def get_piece_mask(piece: Piece | list[Piece], cube_size: int = CUBE_SIZE) -> CubeMask:
+def get_piece_mask(piece: Piece | list[Piece], cube_size: int = DEFAULT_CUBE_SIZE) -> CubeMask:
     """Return a mask for the piece type.
 
     Args:
@@ -126,7 +128,7 @@ def get_single_piece_mask(
     piece: Piece,
     first_idx: int = 1,
     second_idx: int = 1,
-    cube_size: int = CUBE_SIZE,
+    cube_size: int = DEFAULT_CUBE_SIZE,
 ) -> CubeMask:
     """Return a mask for a single piece.
 
@@ -154,7 +156,7 @@ def get_single_piece_mask(
         return get_coord_mask((first_idx, second_idx), cube_size=cube_size)
 
 
-def get_coord_mask(coord: tuple[int, int], cube_size: int = CUBE_SIZE) -> CubeMask:
+def get_coord_mask(coord: tuple[int, int], cube_size: int = DEFAULT_CUBE_SIZE) -> CubeMask:
     """Return a mask for a single piece.
 
     Args:

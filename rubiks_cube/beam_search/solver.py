@@ -7,7 +7,7 @@ from typing import TYPE_CHECKING
 from attrs import frozen
 
 from rubiks_cube.autotagger.pattern import get_patterns
-from rubiks_cube.configuration import CUBE_SIZE
+from rubiks_cube.configuration import DEFAULT_CUBE_SIZE
 from rubiks_cube.configuration import DEFAULT_GENERATOR
 from rubiks_cube.configuration import DEFAULT_METRIC
 from rubiks_cube.configuration.enumeration import Goal
@@ -199,7 +199,7 @@ def beam_search(
     beam_width: int,
     max_solutions: int = 1,
     max_time: float = 60.0,
-    cube_size: int = CUBE_SIZE,
+    cube_size: int = DEFAULT_CUBE_SIZE,
     metric: Metric = DEFAULT_METRIC,
 ) -> BeamSearchSummary:
     """Solve using the beam search algorithm.

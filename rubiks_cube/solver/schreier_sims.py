@@ -17,7 +17,7 @@ from typing import Final
 
 import numpy as np
 
-from rubiks_cube.configuration import CUBE_SIZE
+from rubiks_cube.configuration import DEFAULT_CUBE_SIZE
 from rubiks_cube.move.meta import MoveMeta
 from rubiks_cube.representation import get_rubiks_cube_permutation
 from rubiks_cube.representation.permutation import get_identity_permutation
@@ -102,7 +102,7 @@ def _generate_group(
 def is_solvable(
     permutation: CubePermutation,
     generator: MoveGenerator,
-    cube_size: int = CUBE_SIZE,
+    cube_size: int = DEFAULT_CUBE_SIZE,
     max_group_size: int = MAX_GROUP_SIZE,
 ) -> bool:
     """Check if a permutation is solvable using the given generator.
