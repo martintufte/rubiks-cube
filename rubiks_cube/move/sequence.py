@@ -20,7 +20,6 @@ from rubiks_cube.configuration.regex import SLICE_PATTERN
 from rubiks_cube.configuration.regex import WIDE_PATTERN
 from rubiks_cube.move.formatting import format_string
 from rubiks_cube.move.metrics import measure_moves
-from rubiks_cube.move.utils import rotate_move
 from rubiks_cube.move.utils import strip_move
 from rubiks_cube.move.utils import unstrip_move
 
@@ -323,12 +322,10 @@ def _shift_rotations_to_end_side(moves: list[str], move_meta: MoveMeta) -> list[
         else:
             rotated_move = move
             for rotation in reversed(output_rotations):
-                rotated_move = rotate_move(rotated_move, rotation)
+                rotated_move = move_meta.rotate(rotated_move, rotation)
             output_moves.append(rotated_move)
 
-    if move_meta is not None:
-        return output_moves + move_meta.get_canonical_rotation(output_rotations)
-    return output_moves + output_rotations
+    return output_moves + move_meta.get_canonical_rotation(output_rotations)
 
 
 def shift_rotations_to_end(sequence: MoveSequence, move_meta: MoveMeta) -> None:
