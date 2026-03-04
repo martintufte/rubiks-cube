@@ -326,32 +326,35 @@ def piece_masks(piece: Piece, cube_size: int = DEFAULT_CUBE_SIZE) -> list[CubeMa
     return [pattern2mask(symmetry) for symmetry in symmetries]
 
 
-def pattern_combinations(pattern: CubePattern, cube_size: int = DEFAULT_CUBE_SIZE) -> int:
+def pattern_combinations(pattern: CubePattern, move_meta: MoveMeta) -> int:
     """Calculate the combinations of a pattern. Assumes that the pattern is rotated.
 
     Args:
         pattern (CubePattern): Cube pattern.
-        cube_size (int, optional): Size of the cube. Defaults to CUBE_SIZE.
+        move_meta (MoveMeta): Meta information about moves.
 
     Returns:
         float: Entropy of the pattern, equal to the Shannon entropy.
     """
-    assert 1 <= cube_size <= 3, "Size must be between 1 and 3."
+    assert 1 <= move_meta.cube_size <= 3, "Size must be between 1 and 3."
 
-    combinations = piece_combinations(pattern, Piece.corner, cube_size)
-    combinations *= piece_combinations(pattern, Piece.edge, cube_size)
+    corner_combinations = piece_combinations(pattern, Piece.corner, move_meta)
+    edge_combinations = piece_combinations(pattern, Piece.edge, move_meta)
 
-    if combinations > 1 and not has_parity(cube_size):
-        combinations //= 2
+    combinations = corner_combinations * edge_combinations
 
+    # TODO: Verify that this is correct calculation
+    if combinations > 1 and not move_meta.has_parity:
+        assert combinations % 2 == 0
+        return combinations // 2
     return combinations
 
 
 # TODO: This might not work for centers
-def piece_combinations(
-    pattern: CubePattern, piece: Piece, cube_size: int = DEFAULT_CUBE_SIZE
-) -> int:
+def piece_combinations(pattern: CubePattern, piece: Piece, move_meta: MoveMeta) -> int:
     """Calculate the combinations of a piece in the pattern."""
+    cube_size = move_meta.cube_size
+
     if cube_size == 1 or (cube_size == 2 and piece == Piece.edge):
         return 1
 
@@ -382,8 +385,3 @@ def piece_combinations(
     if not all_orientated and combinations > 1:
         combinations //= n_cubies
     return combinations
-
-
-def has_parity(cube_size: int) -> bool:
-    """Check if the cube has parity."""
-    return cube_size == 2 or cube_size > 3

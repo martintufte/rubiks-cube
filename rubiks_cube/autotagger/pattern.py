@@ -152,20 +152,16 @@ class Pattern:
             return True
         return False
 
-    @property
-    def combinations(self) -> int:
+    def calc_combinations(self, move_meta: MoveMeta) -> int:
         """Sum of the number of combinations for each pattern."""
-        n = sum(
-            pattern_combinations(pattern, cube_size=DEFAULT_CUBE_SIZE) for pattern in self.patterns
-        )
+        n = sum(pattern_combinations(pattern, move_meta) for pattern in self.patterns)
 
         # TODO: Fix hack for counting with validator. Right now, only htr has a validator
         if self.validator is not None:
             return n // 6
         return n
 
-    @property
-    def entropy(self) -> float:
+    def entropy(self, move_meta: MoveMeta) -> float:
         """Find the estimated entropy of the patterns.
 
         This is the number of bits required to identify the permutation,
@@ -179,10 +175,13 @@ class Pattern:
 
             H(pattern) = log2(|X|).
 
+        Args:
+            move_meta (MoveMeta): Meta information about moves.
+
         Returns:
             float: Estimated entropy of the patterns.
         """
-        return log2(self.combinations)
+        return log2(self.calc_combinations(move_meta=move_meta))
 
     def create_symmetries(self, move_meta: MoveMeta) -> None:
         """Create symmetries for the cube expression."""
@@ -399,7 +398,7 @@ def get_patterns(cube_size: int = DEFAULT_CUBE_SIZE) -> dict[Goal, Pattern]:
     LOGGER.debug(f"Created patterns in {timeit.default_timer() - t:.3f} seconds.")
 
     def entropy(goal: Goal) -> float:
-        return patterns[goal].entropy
+        return patterns[goal].entropy(move_meta=move_meta)
 
     t = timeit.default_timer()
     patterns = {goal: patterns[goal] for goal in sorted(patterns, key=entropy)}
