@@ -9,6 +9,7 @@ import numpy as np
 
 from rubiks_cube.configuration.enumeration import Goal
 from rubiks_cube.graphics.horizontal import plot_colored_cube_2D
+from rubiks_cube.representation.pattern import get_solved_pattern
 
 if TYPE_CHECKING:
     from matplotlib.figure import Figure
@@ -53,7 +54,7 @@ COLOR_SCHEME: Mapping[int, str] = MappingProxyType(
 
 def get_colored_rubiks_cube(
     permutation: CubePermutation,
-    face_size: int,
+    cube_size: int,
     goal: Goal = Goal.solved,
 ) -> CubeColor:
     """Get a colored Rubik's cube from the permutation.
@@ -61,7 +62,7 @@ def get_colored_rubiks_cube(
     Args:
         goal (Goal, optional): Goal to solve. Defaults to Goal.solved.
         permutation (CubePermutation, optional): Permutation of the cube. Defaults to None.
-        face_size (int): Size of the cube face.
+        cube_size (int): Size of the cube.
 
     Returns:
         CubeColor: Cube state with colors.
@@ -70,7 +71,7 @@ def get_colored_rubiks_cube(
         NotImplementedError: Goal is not implemented.
     """
     if goal is Goal.solved:
-        pattern = (np.arange(6 * face_size, dtype=int) // face_size).astype(int) + 1
+        pattern = get_solved_pattern(cube_size=cube_size)
     else:
         raise NotImplementedError(f"Goal '{goal}' is not implemented.")
 
@@ -91,10 +92,8 @@ def plot_permutation(permutation: CubePermutation) -> Figure:
     Returns:
         Figure: Figure object.
     """
-    face_size = permutation.size // 6
-    cube_size = int(math.sqrt(face_size))
-    assert cube_size**2 == face_size
+    cube_size = int(math.sqrt(permutation.size // 6))
 
-    colored_cube = get_colored_rubiks_cube(permutation=permutation, face_size=face_size)
+    colored_cube = get_colored_rubiks_cube(permutation=permutation, cube_size=cube_size)
 
     return plot_colored_cube_2D(colored_cube, cube_size=cube_size)
