@@ -11,7 +11,6 @@ from rubiks_cube.autotagger.pattern import get_patterns
 from rubiks_cube.autotagger.step import DR_STEPS
 from rubiks_cube.autotagger.step import TAG_TO_TAG_STEPS
 from rubiks_cube.autotagger.subset import get_dr_subset_label
-from rubiks_cube.configuration import DEFAULT_CUBE_SIZE
 from rubiks_cube.configuration.enumeration import Goal
 
 if TYPE_CHECKING:
@@ -81,16 +80,16 @@ class PatternTagger(PermutationTagger):
 
 def autotag_permutation(
     permutation: CubePermutation,
+    cube_size: int,
     include_subset: bool = False,
-    cube_size: int = DEFAULT_CUBE_SIZE,
 ) -> str:
     """Autotag the permutation.
 
     Args:
         permutation (CubePermutation): Cube permutation.
+        cube_size (int): Size of the cube.
         include_subset (bool, optional): Whether to include the subset in the tag.
             Defaults to False.
-        cube_size (int, optional): Size of the cube. Defaults to CUBE_SIZE.
 
     Returns:
         str: Tag for the permutation. If subset is found, included as [].

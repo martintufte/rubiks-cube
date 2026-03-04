@@ -4,9 +4,7 @@ from typing import TYPE_CHECKING
 
 import numpy as np
 
-from rubiks_cube.configuration import DEFAULT_CUBE_SIZE
 from rubiks_cube.configuration.enumeration import Piece
-from rubiks_cube.move.meta import MoveMeta
 from rubiks_cube.move.sequence import MoveSequence
 from rubiks_cube.representation import get_rubiks_cube_permutation
 from rubiks_cube.representation.utils import get_identity
@@ -15,34 +13,17 @@ if TYPE_CHECKING:
     from collections.abc import Sequence
 
     from rubiks_cube.configuration.types import CubeMask
+    from rubiks_cube.move.meta import MoveMeta
 
 
-def get_ones_mask(cube_size: int = DEFAULT_CUBE_SIZE) -> CubeMask:
-    """Return the ones mask of the cube.
-
-    Args:
-        cube_size (int, optional): Size of the cube. Defaults to CUBE_SIZE.
-
-    Returns:
-        CubeMask: Identity mask.
-    """
-    assert 1 <= cube_size <= 10, "Size must be between 1 and 10."
-
-    return np.ones(6 * cube_size**2, dtype=bool)
-
-
-def get_zeros_mask(cube_size: int = DEFAULT_CUBE_SIZE) -> CubeMask:
-    """Return the zeros mask of the cube.
-
-    Args:
-        cube_size (int, optional): Size of the cube. Defaults to CUBE_SIZE.
-
-    Returns:
-        CubeMask: Identity mask.
-    """
-    assert 1 <= cube_size <= 10, "Size must be between 1 and 10."
-
+def get_zeros_mask(cube_size: int) -> CubeMask:
+    """Return the zeros mask of the cube."""
     return np.zeros(6 * cube_size**2, dtype=bool)
+
+
+def get_ones_mask(cube_size: int) -> CubeMask:
+    """Return the ones mask of the cube."""
+    return np.ones(6 * cube_size**2, dtype=bool)
 
 
 def combine_masks(masks: Sequence[CubeMask]) -> CubeMask:
@@ -60,23 +41,18 @@ def combine_masks(masks: Sequence[CubeMask]) -> CubeMask:
     return mask
 
 
-def get_rubiks_cube_mask(
-    sequence: MoveSequence | None = None,
-    cube_size: int = DEFAULT_CUBE_SIZE,
-) -> CubeMask:
+def get_rubiks_cube_mask(sequence: MoveSequence, move_meta: MoveMeta) -> CubeMask:
     """Create a boolean mask of pieces that remain solved after applying the sequence.
 
     Args:
-        sequence (MoveSequence | None, optional): Move sequence. Defaults to None.
-        cube_size (int, optional): Size of the cube. Defaults to CUBE_SIZE.
+        sequence (MoveSequence): Move sequence.
+        move_meta (MoveMeta): Meta information about moves.
 
     Returns:
         CubeMask: Boolean mask of pieces that remain solved after sequence.
     """
     if sequence is None:
         sequence = MoveSequence()
-
-    move_meta = MoveMeta.from_cube_size(cube_size)
 
     permutation = get_rubiks_cube_permutation(sequence, move_meta=move_meta)
 
@@ -86,12 +62,12 @@ def get_rubiks_cube_mask(
     return mask
 
 
-def get_piece_mask(piece: Piece | list[Piece], cube_size: int = DEFAULT_CUBE_SIZE) -> CubeMask:
+def get_piece_mask(piece: Piece | list[Piece], cube_size: int) -> CubeMask:
     """Return a mask for the piece type.
 
     Args:
         piece (Piece | list[Piece]): Piece type(s).
-        cube_size (int, optional): Size of the cube. Defaults to CUBE_SIZE.
+        cube_size (int): Size of the cube.
 
     Returns:
         CubeMask: Mask for the piece type.
@@ -126,17 +102,17 @@ def get_piece_mask(piece: Piece | list[Piece], cube_size: int = DEFAULT_CUBE_SIZ
 
 def get_single_piece_mask(
     piece: Piece,
+    cube_size: int,
     first_idx: int = 1,
     second_idx: int = 1,
-    cube_size: int = DEFAULT_CUBE_SIZE,
 ) -> CubeMask:
     """Return a mask for a single piece.
 
     Args:
         piece (Piece): Piece type.
+        cube_size (int): Size of the cube.
         first_idx (int, optional): First index. Defaults to 1.
         second_idx (int, optional): Second index. Defaults to 1.
-        cube_size (int, optional): Size of the cube. Defaults to CUBE_SIZE.
 
     Returns:
         CubeMask: Mask for the single piece.
@@ -156,12 +132,12 @@ def get_single_piece_mask(
         return get_coord_mask((first_idx, second_idx), cube_size=cube_size)
 
 
-def get_coord_mask(coord: tuple[int, int], cube_size: int = DEFAULT_CUBE_SIZE) -> CubeMask:
+def get_coord_mask(coord: tuple[int, int], cube_size: int) -> CubeMask:
     """Return a mask for a single piece.
 
     Args:
         coord (tuple[int, int]): Coordinates of the piece.
-        cube_size (int, optional): Size of the cube. Defaults to CUBE_SIZE.
+        cube_size (int): Size of the cube.
 
     Returns:
         CubeMask: Mask for the single piece.

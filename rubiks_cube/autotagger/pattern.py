@@ -75,9 +75,7 @@ class Pattern:
         if solved_sequence is None:
             solved_pattern = get_empty_pattern(cube_size=move_meta.cube_size)
         else:
-            solved_mask = get_rubiks_cube_mask(
-                sequence=solved_sequence, cube_size=move_meta.cube_size
-            )
+            solved_mask = get_rubiks_cube_mask(sequence=solved_sequence, move_meta=move_meta)
             solved_pattern = get_identity_pattern(cube_size=move_meta.cube_size)
             solved_pattern[~solved_mask] = 0
 
