@@ -4,6 +4,7 @@ from rubiks_cube.configuration.enumeration import Metric
 from rubiks_cube.move.meta import MoveMeta
 from rubiks_cube.move.sequence import MoveSequence
 from rubiks_cube.move.sequence import cleanup
+from rubiks_cube.move.sequence import invert
 from rubiks_cube.move.sequence import measure
 from rubiks_cube.move.sequence import niss
 from rubiks_cube.move.sequence import replace_slice_moves
@@ -274,7 +275,9 @@ def test_replace_slice_moves(move: str, expected: str) -> None:
 def test_unniss() -> None:
     """Test unnissing a sequence."""
     seq = MoveSequence.from_str("R U (R' U')")
-    result = unniss(seq)
+    move_meta = MoveMeta.from_cube_size(3)
+
+    result = unniss(seq, move_meta)
     assert result == MoveSequence.from_str("R U U R")
 
 
@@ -296,7 +299,10 @@ def test_cleanup() -> None:
 def test_invert() -> None:
     """Test sequence inversion reverses and inverts each move."""
     seq = MoveSequence.from_str("L M' x2 (R' S2 z)")
-    assert ~seq == MoveSequence.from_str("(z' S2 R) x2 M L'")
+    move_meta = MoveMeta.from_cube_size(3)
+
+    result = invert(seq, move_meta)
+    assert result == MoveSequence.from_str("x2 M L' (z' S2 R)")
 
 
 @pytest.mark.parametrize(

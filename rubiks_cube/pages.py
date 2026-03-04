@@ -305,7 +305,7 @@ def solver(session: SessionStateProxy, cookie_manager: stx.CookieManager) -> Non
 
                 # Include normal <-> inverse cancellations when the result is solved.
                 if tag == "solved":
-                    final_sequence = unniss(final_sequence)
+                    final_sequence = unniss(final_sequence, move_meta=move_meta)
 
                 cleaned_final_sequence = cleanup(final_sequence, move_meta)
                 total_moves = measure(cleaned_final_sequence, metric=DEFAULT_METRIC)

@@ -8,7 +8,6 @@ from typing import Final
 from rubiks_cube.move.sequence import replace_slice_moves
 from rubiks_cube.move.sequence import replace_wide_moves
 from rubiks_cube.move.sequence import shift_rotations_to_end
-from rubiks_cube.move.utils import is_rotation
 from rubiks_cube.representation.permutation import get_identity_permutation
 from rubiks_cube.representation.utils import invert
 
@@ -64,7 +63,7 @@ def get_rubiks_cube_permutation(
     if use_inverse and sequence.inverse:
         inverted_permutation = invert(permutation)
         for move in sequence.inverse:
-            if orientate_after and is_rotation(move):
+            if orientate_after and move_meta.is_rotation(move):
                 break
             inverted_permutation = inverted_permutation[permutations[move]]
         permutation = invert(inverted_permutation)
@@ -72,7 +71,7 @@ def get_rubiks_cube_permutation(
     # Apply moves on normal
     if sequence.normal:
         for move in sequence.normal:
-            if orientate_after and is_rotation(move):
+            if orientate_after and move_meta.is_rotation(move):
                 break
             permutation = permutation[permutations[move]]
 

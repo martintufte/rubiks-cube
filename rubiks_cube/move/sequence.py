@@ -20,8 +20,6 @@ from rubiks_cube.configuration.regex import SLICE_PATTERN
 from rubiks_cube.configuration.regex import WIDE_PATTERN
 from rubiks_cube.move.formatting import format_string
 from rubiks_cube.move.metrics import measure_moves
-from rubiks_cube.move.utils import invert_move
-from rubiks_cube.move.utils import is_rotation
 from rubiks_cube.move.utils import rotate_move
 from rubiks_cube.move.utils import strip_move
 from rubiks_cube.move.utils import unstrip_move
@@ -214,12 +212,6 @@ class MoveSequence(Sequence[str]):
     def __reversed__(self) -> Iterator[str]:
         return reversed(self.moves)
 
-    def __invert__(self) -> MoveSequence:
-        return MoveSequence(
-            normal=[invert_move(move) for move in reversed(self.normal)],
-            inverse=[invert_move(move) for move in reversed(self.inverse)],
-        )
-
     def apply(self, /, fn: Callable[[str], str | Sequence[str]]) -> None:
         """Apply a function to each move in the sequence.
 
@@ -326,7 +318,7 @@ def _shift_rotations_to_end_side(moves: list[str], move_meta: MoveMeta) -> list[
     output_moves: list[str] = []
 
     for move in moves:
-        if is_rotation(move):
+        if move_meta.is_rotation(move):
             output_rotations.append(move)
         else:
             rotated_move = move
@@ -392,7 +384,7 @@ def _try_cancel_side(moves: list[str], move_meta: MoveMeta) -> list[str]:
     output: list[str] = []
     segment: list[str] = []
     for move in moves:
-        if is_rotation(move):
+        if move_meta.is_rotation(move):
             if segment:
                 output.extend(reduce_segment(segment))
                 segment = []
@@ -421,7 +413,7 @@ def niss(sequence: MoveSequence) -> None:
     sequence.normal, sequence.inverse = sequence.inverse, sequence.normal
 
 
-def unniss(sequence: MoveSequence) -> MoveSequence:
+def unniss(sequence: MoveSequence, move_meta: MoveMeta) -> MoveSequence:
     """Unniss a move sequence.
 
     Args:
@@ -430,11 +422,14 @@ def unniss(sequence: MoveSequence) -> MoveSequence:
     Returns:
         MoveSequence: Unnissed move sequence.
     """
+    return MoveSequence(normal=[*sequence.normal, *move_meta.invert(sequence.inverse)])
+
+
+def invert(sequence: MoveSequence, move_meta: MoveMeta) -> MoveSequence:
+    """Try to invert the move sequence."""
     return MoveSequence(
-        normal=[
-            *sequence.normal,
-            *(invert_move(move) for move in reversed(sequence.inverse)),
-        ]
+        normal=move_meta.invert(sequence.normal),
+        inverse=move_meta.invert(sequence.inverse),
     )
 
 

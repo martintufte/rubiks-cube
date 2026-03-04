@@ -1,18 +1,47 @@
 from __future__ import annotations
 
+import re
 from dataclasses import dataclass
 from functools import lru_cache
 from typing import TYPE_CHECKING
 from typing import Final
 from typing import Sequence
 
-from rubiks_cube.move.utils import is_rotation
+from rubiks_cube.configuration.regex import ROTATION_SEARCH
 from rubiks_cube.representation.permutation import create_permutations
 from rubiks_cube.representation.permutation import get_identity_permutation
 from rubiks_cube.representation.utils import get_identity
 
 if TYPE_CHECKING:
     from rubiks_cube.configuration.types import CubePermutation
+
+
+# TODO: Consider not hardcoding
+def is_rotation(move: str) -> bool:
+    """Return True if the move is a rotation.
+
+    Args:
+        move (str): Move to check.
+
+    Returns:
+        bool: True if the move is a rotation.
+    """
+    return bool(re.search(ROTATION_SEARCH, move))
+
+
+# TODO: Consider not hardcoding
+def invert_move(move: str) -> str:
+    """Invert a move.
+
+    Args:
+        move (str): Move to invert.
+
+    Returns:
+        str: Inverted move.
+    """
+    if move.endswith("2"):
+        return move
+    return move[:-1] if move.endswith("'") else move + "'"
 
 
 # State (X, Y) means original X face points Up and original Y face points Front
@@ -123,3 +152,9 @@ class MoveMeta:
 
     def canonicalize_rotations(self, rotations: list[str]) -> list[str]:
         return canonicalize_rotations(rotations=rotations)
+
+    def is_rotation(self, move: str) -> bool:
+        return move in self.rotation_moves
+
+    def invert(self, moves: list[str]) -> list[str]:
+        return [invert_move(move) for move in reversed(moves)]

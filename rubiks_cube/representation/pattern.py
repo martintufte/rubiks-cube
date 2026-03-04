@@ -207,8 +207,6 @@ def pattern_from_generator(
     Returns:
         CubePattern: Cube pattern.
     """
-    if generator is None:
-        generator = MoveGenerator.from_str("<x, y>")
     if mask is None:
         mask = np.ones(move_meta.size, dtype=bool)
 

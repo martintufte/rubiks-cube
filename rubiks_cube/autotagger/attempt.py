@@ -98,7 +98,7 @@ class Attempt:
     def get_final_solution(self) -> MoveSequence:
         combined = sum(self.steps, start=MoveSequence())
         if self.cleanup_final:
-            return cleanup(unniss(combined), self.move_meta)
+            return cleanup(unniss(combined, self.move_meta), self.move_meta)
         return combined
 
     def compile(self, width: int = 80) -> str:
@@ -139,7 +139,7 @@ class Attempt:
                 orientate_after=True,
             )
             if np.array_equal(final_permutation, self.move_meta.get_identity_permutation()):
-                final_sequence = unniss(final_sequence)
+                final_sequence = unniss(final_sequence, self.move_meta)
 
             tag = autotag_step(initial_permutation, final_permutation)
             if i == 0 and tag == "rotation":
