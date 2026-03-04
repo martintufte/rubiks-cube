@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from functools import lru_cache
 from typing import TYPE_CHECKING
 
 import numpy as np
@@ -7,6 +8,7 @@ import numpy as np
 from rubiks_cube.configuration.enumeration import Piece
 from rubiks_cube.move.sequence import MoveSequence
 from rubiks_cube.representation import get_rubiks_cube_permutation
+from rubiks_cube.representation.permutation import create_permutations
 from rubiks_cube.representation.utils import get_identity
 
 if TYPE_CHECKING:
@@ -168,3 +170,54 @@ def get_coord_mask(coord: tuple[int, int], cube_size: int) -> CubeMask:
         mask[coord[0] * cube_size + coord[1]] = True
 
     return mask
+
+
+def generate_piece_symmetries(piece_mask: CubeMask, cube_size: int) -> list[CubeMask]:
+    """Generate list of piece symmetries of the cube.
+
+    Args:
+        piece_mask (CubeMask): Piece mask.
+        cube_size (int): Cube size.
+
+    Returns:
+        list[CubePattern]: List of unique piece masks.
+
+    Raises:
+        ValueError: Piece symmetries is too large.
+    """
+    # Only need actions to generate all rotation states
+    # TODO: Add mirror-permutation (i.e. flip 3D chirality)
+    all_permutations = create_permutations(cube_size)
+    actions = [all_permutations["x"], all_permutations["y"]]
+
+    masks: list[CubeMask] = [piece_mask]
+    size = len(masks)
+
+    while True:
+        for mask in masks:
+            for action in actions:
+                new_mask: CubeMask = mask[action]
+                if not any(np.array_equal(new_mask, current_mask) for current_mask in masks):
+                    masks.append(new_mask)
+        if len(masks) == size:
+            break
+        size = len(masks)
+        if size > 48:
+            raise ValueError(f"Piece symmetries is too large, {len(masks)} > 48!")
+
+    return masks
+
+
+@lru_cache(maxsize=None)
+def piece_masks(piece: Piece, cube_size: int) -> list[CubeMask]:
+    """Generate the symmetries of a piece.
+
+    Args:
+        piece (Piece): Piece type.
+        cube_size (int): Size of the cube.
+
+    Returns:
+        list[CubeMask]: List of piece symmetries.
+    """
+    piece_mask = get_single_piece_mask(piece, cube_size=cube_size)
+    return generate_piece_symmetries(piece_mask=piece_mask, cube_size=cube_size)
