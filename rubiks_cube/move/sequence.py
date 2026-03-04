@@ -327,7 +327,7 @@ def _shift_rotations_to_end_side(moves: list[str], move_meta: MoveMeta) -> list[
             output_moves.append(rotated_move)
 
     if move_meta is not None:
-        return output_moves + move_meta.canonicalize_rotations(output_rotations)
+        return output_moves + move_meta.get_canonical_rotation(output_rotations)
     return output_moves + output_rotations
 
 
