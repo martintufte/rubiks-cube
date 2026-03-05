@@ -8,6 +8,7 @@ from rubiks_cube.beam_search.solver import beam_search
 from rubiks_cube.beam_search.solver import build_step_contexts
 from rubiks_cube.configuration.enumeration import Goal
 from rubiks_cube.configuration.enumeration import Status
+from rubiks_cube.move.generator import MoveGenerator
 from rubiks_cube.move.meta import MoveMeta
 from rubiks_cube.move.sequence import MoveSequence
 from rubiks_cube.move.steps import MoveSteps
@@ -21,6 +22,7 @@ def test_beam_search_transition_switch_solves_on_inverse() -> None:
             BeamStep(
                 goals=[Goal.solved],
                 transition=Transition(search_side="inverse"),
+                generator=MoveGenerator.from_str("<L, R, F, B, U, D>"),
                 max_search_depth=1,
                 max_solutions=1,
             )
@@ -49,6 +51,7 @@ def test_beam_search_transition_both_keeps_both_sides() -> None:
             BeamStep(
                 goals=[Goal.solved],
                 transition=Transition(search_side="both"),
+                generator=MoveGenerator.from_str("<L, R, F, B, U, D>"),
                 max_search_depth=1,
                 max_solutions=2,
             )
@@ -77,6 +80,7 @@ def test_beam_search_single_step() -> None:
             BeamStep(
                 goals=[Goal.solved],
                 transition=Transition(),
+                generator=MoveGenerator.from_str("<L, R, F, B, U, D>"),
                 max_search_depth=3,
                 max_solutions=3,
             )
@@ -118,12 +122,14 @@ def test_multi_goal_step_on_solved_cube() -> None:
             BeamStep(
                 goals=[Goal.eo_fb, Goal.eo_lr],
                 transition=Transition(),
+                generator=MoveGenerator.from_str("<L, R, F, B, U, D>"),
                 max_search_depth=4,
                 max_solutions=1,
             ),
             BeamStep(
                 goals=[Goal.solved],
                 transition=Transition(),
+                generator=MoveGenerator.from_str("<L, R, F, B, U, D>"),
                 max_search_depth=4,
                 max_solutions=1,
             ),
@@ -150,6 +156,7 @@ def test_prev_goal_contained_allows_matching_transition() -> None:
             BeamStep(
                 goals=[Goal.eo_fb],
                 transition=Transition(),
+                generator=MoveGenerator.from_str("<L, R, F, B, U, D>"),
                 min_search_depth=0,
                 max_search_depth=0,
                 max_solutions=1,
@@ -157,6 +164,7 @@ def test_prev_goal_contained_allows_matching_transition() -> None:
             BeamStep(
                 goals=[Goal.dr_ud],
                 transition=Transition(search_side="prev", check_contained=True),
+                generator=MoveGenerator.from_str("<L, R, F, B, U, D>"),
                 min_search_depth=0,
                 max_search_depth=0,
                 max_solutions=1,
@@ -185,16 +193,18 @@ def test_prev_goal_contained_rejects_non_matching_transition() -> None:
             BeamStep(
                 goals=[Goal.eo_fb],
                 transition=Transition(),
+                generator=MoveGenerator.from_str("<L, R, F, B, U, D>"),
                 min_search_depth=0,
                 max_search_depth=0,
                 max_solutions=1,
             ),
             BeamStep(
                 goals=[Goal.dr_fb],
+                transition=Transition(search_side="prev", check_contained=True),
+                generator=MoveGenerator.from_str("<L, R, F, B, U, D>"),
                 min_search_depth=0,
                 max_search_depth=0,
                 max_solutions=1,
-                transition=Transition(search_side="prev", check_contained=True),
             ),
         ],
     )
@@ -219,6 +229,7 @@ def test_htr_step_uses_solution_validator() -> None:
             BeamStep(
                 goals=[Goal.htr],
                 transition=Transition(),
+                generator=MoveGenerator.from_str("<L, R, F, B, U, D>"),
                 min_search_depth=0,
                 max_search_depth=1,
                 max_solutions=1,
@@ -226,6 +237,7 @@ def test_htr_step_uses_solution_validator() -> None:
             BeamStep(
                 goals=[Goal.solved],
                 transition=Transition(),
+                generator=MoveGenerator.from_str("<L, R, F, B, U, D>"),
                 min_search_depth=0,
                 max_search_depth=1,
                 max_solutions=1,

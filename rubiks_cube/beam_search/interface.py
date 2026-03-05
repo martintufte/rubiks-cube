@@ -22,7 +22,7 @@ class Transition:
 class BeamStep:
     goals: list[Goal]
     transition: Transition
-    generator: MoveGenerator | None = None
+    generator: MoveGenerator
     min_search_depth: int = 0
     max_search_depth: int = 10
     max_solutions: int = 1
