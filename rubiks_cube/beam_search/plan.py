@@ -14,8 +14,12 @@ DR_PLAN: Final[BeamPlan] = BeamPlan(
     steps=[
         BeamStep(
             goals=[Goal.eo_lr, Goal.eo_fb, Goal.eo_ud],
-            transition=Transition(search_side="both"),
-            generator=MoveGenerator.from_str("<L, R, F, B, U, D>"),
+            transition=Transition(
+                search_side="both",
+                generator_map={
+                    Goal.none: MoveGenerator.from_str("<L, R, F, B, U, D>"),
+                },
+            ),
             max_search_depth=6,
             max_solutions=30,
         ),
@@ -31,7 +35,6 @@ DR_PLAN: Final[BeamPlan] = BeamPlan(
                 check_contained=True,
                 expand_variations=True,
             ),
-            generator=MoveGenerator.from_str("<L, R, F, B, U, D>"),
             max_search_depth=10,
             max_solutions=10,
         ),
@@ -44,8 +47,12 @@ HTR_PLAN: Final[BeamPlan] = BeamPlan(
     steps=[
         BeamStep(
             goals=[Goal.eo_lr, Goal.eo_fb, Goal.eo_ud],
-            transition=Transition(search_side="both"),
-            generator=MoveGenerator.from_str("<L, R, F, B, U, D>"),
+            transition=Transition(
+                search_side="both",
+                generator_map={
+                    Goal.none: MoveGenerator.from_str("<L, R, F, B, U, D>"),
+                },
+            ),
             max_search_depth=6,
             max_solutions=30,
         ),
@@ -61,7 +68,6 @@ HTR_PLAN: Final[BeamPlan] = BeamPlan(
                 check_contained=True,
                 expand_variations=True,
             ),
-            generator=MoveGenerator.from_str("<L, R, F, B, U, D>"),
             max_search_depth=10,
             max_solutions=10,
         ),
@@ -76,7 +82,6 @@ HTR_PLAN: Final[BeamPlan] = BeamPlan(
                 },
                 expand_variations=True,
             ),
-            generator=MoveGenerator.from_str("<L, R, F, B, U, D>"),
             max_search_depth=12,
             max_solutions=10,
         ),
@@ -89,8 +94,12 @@ SOLVED_PLAN: Final[BeamPlan] = BeamPlan(
     steps=[
         BeamStep(
             goals=[Goal.eo_lr, Goal.eo_fb, Goal.eo_ud],
-            transition=Transition(search_side="both"),
-            generator=MoveGenerator.from_str("<L, R, F, B, U, D>"),
+            transition=Transition(
+                search_side="both",
+                generator_map={
+                    Goal.none: MoveGenerator.from_str("<L, R, F, B, U, D>"),
+                },
+            ),
             max_search_depth=6,
             max_solutions=30,
         ),
@@ -106,7 +115,6 @@ SOLVED_PLAN: Final[BeamPlan] = BeamPlan(
                 check_contained=True,
                 expand_variations=True,
             ),
-            generator=MoveGenerator.from_str("<L, R, F, B, U, D>"),
             max_search_depth=10,
             max_solutions=5,
         ),
@@ -121,7 +129,6 @@ SOLVED_PLAN: Final[BeamPlan] = BeamPlan(
                 },
                 expand_variations=True,
             ),
-            generator=MoveGenerator.from_str("<L, R, F, B, U, D>"),
             max_search_depth=12,
             max_solutions=5,
         ),
@@ -134,7 +141,6 @@ SOLVED_PLAN: Final[BeamPlan] = BeamPlan(
                 },
                 expand_variations=True,
             ),
-            generator=MoveGenerator.from_str("<L, R, F, B, U, D>"),
             max_search_depth=14,
             max_solutions=5,
         ),
@@ -148,8 +154,12 @@ LEAVE_SLICE_PLAN: Final[BeamPlan] = BeamPlan(
     steps=[
         BeamStep(
             goals=[Goal.eo_lr, Goal.eo_fb, Goal.eo_ud],
-            transition=Transition(search_side="both"),
-            generator=MoveGenerator.from_str("<L, R, F, B, U, D>"),
+            transition=Transition(
+                search_side="both",
+                generator_map={
+                    Goal.none: MoveGenerator.from_str("<L, R, F, B, U, D>"),
+                },
+            ),
             max_search_depth=6,
             max_solutions=30,
         ),
@@ -165,7 +175,6 @@ LEAVE_SLICE_PLAN: Final[BeamPlan] = BeamPlan(
                 check_contained=True,
                 expand_variations=True,
             ),
-            generator=MoveGenerator.from_str("<L, R, F, B, U, D>"),
             max_search_depth=10,
             max_solutions=10,
         ),
@@ -180,7 +189,6 @@ LEAVE_SLICE_PLAN: Final[BeamPlan] = BeamPlan(
                 },
                 expand_variations=True,
             ),
-            generator=MoveGenerator.from_str("<L, R, F, B, U, D>"),
             max_search_depth=12,
             max_solutions=10,
         ),
@@ -193,7 +201,6 @@ LEAVE_SLICE_PLAN: Final[BeamPlan] = BeamPlan(
                 },
                 expand_variations=True,
             ),
-            generator=MoveGenerator.from_str("<L, R, F, B, U, D>"),
             max_search_depth=10,
             max_solutions=10,
         ),
