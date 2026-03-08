@@ -141,6 +141,7 @@ def app(
     metric = app_cfg.metric
 
     # Setup the MoveMeta and the AutoTagger
+    LOGGER.info(f"Initializing MoveMeta with cube size {cube_size}")
     move_meta = MoveMeta.from_cube_size(cube_size)
     autotagger = PatternTagger.from_cube_size(cube_size)
 
