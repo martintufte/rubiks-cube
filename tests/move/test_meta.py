@@ -1,10 +1,15 @@
 from __future__ import annotations
 
+from typing import TYPE_CHECKING
+
 import numpy as np
 
 from rubiks_cube.move.meta import MoveMeta
 from rubiks_cube.move.sequence import MoveSequence
 from rubiks_cube.move.sequence import cancel_moves
+
+if TYPE_CHECKING:
+    from rubiks_cube.configuration.types import CubePermutation
 
 
 def test_from_cube_size_is_cached() -> None:
@@ -67,8 +72,32 @@ class TestHasParity:
     move_meta_2x2 = MoveMeta.from_cube_size(2)
     move_meta_3x3 = MoveMeta.from_cube_size(3)
 
+    piece_groups: list[set[int]] = move_meta_3x3.discover_pieces()
+
+    def permutation_is_odd(self, permutation: CubePermutation) -> int:
+        visited: set[int] = set()
+        n_cycles = 0
+
+        for group in self.piece_groups:
+            if any(idx in visited for idx in group):
+                continue
+
+            n_cycles += 1
+            idx = next(iter(group))
+            while idx not in visited:
+                visited.add(idx)
+                idx = permutation[idx]
+
+        return (len(self.piece_groups) - n_cycles) % 2
+
     def test_2x2_has_parity(self) -> None:
         assert self.move_meta_2x2.has_parity
 
     def test_3x3_not_has_parity(self) -> None:
         assert not self.move_meta_3x3.has_parity
+
+    def test_permutation(self) -> None:
+        for move in ["R", "L", "U", "D", "F", "B"]:
+            permutation = self.move_meta_3x3.permutations[move]
+
+            assert not self.permutation_is_odd(permutation=permutation)
