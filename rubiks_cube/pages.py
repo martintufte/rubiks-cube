@@ -15,7 +15,7 @@ from rubiks_cube.autotagger import autotag_permutation
 from rubiks_cube.autotagger.attempt import Attempt
 from rubiks_cube.beam_search.plan import BEAM_PLANS
 from rubiks_cube.beam_search.solver import beam_search as solve_beam_search
-from rubiks_cube.configuration import DEFAULT_GENERATOR
+from rubiks_cube.configuration import DEFAULT_GENERATOR_MAP
 from rubiks_cube.configuration import AppConfig
 from rubiks_cube.configuration.enumeration import Goal
 from rubiks_cube.configuration.enumeration import SolveStrategy
@@ -220,7 +220,7 @@ def app(
         with second_row[0]:
             generator = st.text_input(
                 label="Generator",
-                value=DEFAULT_GENERATOR,
+                value=DEFAULT_GENERATOR_MAP[move_meta.cube_size],
                 key="generator",
             )
         with second_row[1]:
