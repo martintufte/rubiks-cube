@@ -16,9 +16,9 @@ LogLevel: TypeAlias = Literal["debug", "info", "warning", "error", "critical"]
 
 @attrs.frozen()
 class AppConfig:
-    cube_size: int = 2
+    cube_size: int = 3
     metric: Metric = Metric.HTM
-    layout: Literal["centered", "wide"] = "wide"
+    layout: Literal["centered", "wide"] = "centered"
     log_level: LogLevel = "debug"
 
 
