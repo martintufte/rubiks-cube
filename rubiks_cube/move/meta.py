@@ -135,37 +135,35 @@ class MoveMeta:
 
         return piece_groups
 
-    # TODO: Count cycles to find if any permutation has odd transposition factorization
     @cached_property
     def has_parity(self) -> bool:
         """Check if the cube has parity.
 
-        Checks if any permutation has odd transposition decomposition.
+        Checks if there exists any permutation has odd transposition decomposition.
+        It is checked by counting the number of piece cycles (including 1-cycles)
+        of every permutation. If the difference between the number of pieces and the
+        number of cycles is 1 (mod 2), then the permutation is odd.
         """
         piece_groups = self.discover_pieces()
         n_pieces = len(piece_groups)
 
-        def permutation_is_odd(permutation: CubePermutation) -> int:
+        def is_odd(permutation: CubePermutation) -> bool:
             visited: set[int] = set()
-            n_cycles = 0
+            cycles = 0
 
             for group in piece_groups:
                 if any(idx in visited for idx in group):
                     continue
 
-                n_cycles += 1
+                cycles += 1
                 idx = next(iter(group))
                 while idx not in visited:
                     visited.add(idx)
                     idx = permutation[idx]
 
-            return (n_pieces - n_cycles) % 2
+            return (n_pieces - cycles) % 2 == 1
 
-        return any(
-            permutation_is_odd(permutation)
-            for move, permutation in self.permutations.items()
-            if move in self.legal_moves
-        )
+        return any(is_odd(permutation) for permutation in self.permutations.values())
 
     @classmethod
     @lru_cache(maxsize=10)
