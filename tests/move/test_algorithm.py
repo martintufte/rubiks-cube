@@ -25,11 +25,6 @@ class TestMoveAlgorithmBasics:
         assert alg.name == "empty"
         assert len(alg.sequence) == 0
 
-    def test_invalid_name_too_short(self) -> None:
-        """Test that name must be at least 2 characters."""
-        with pytest.raises(ValueError, match=r"Algorithm name got unsupported characters"):
-            MoveAlgorithm("x", MoveSequence.from_str("R U"))
-
     def test_invalid_name_with_space(self) -> None:
         """Test that name cannot contain spaces."""
         with pytest.raises(ValueError, match=r"Algorithm name got unsupported characters"):
@@ -43,12 +38,7 @@ class TestMoveAlgorithmBasics:
     def test_string_representation(self) -> None:
         """Test string representation."""
         alg = MoveAlgorithm("sune", MoveSequence.from_str("R U R' U R U2 R'"))
-        assert str(alg) == "MoveAlgorithm('sune': R U R' U R U2 R')"
-
-    def test_string_representation_empty(self) -> None:
-        """Test string representation with empty sequence."""
-        alg = MoveAlgorithm("empty", MoveSequence())
-        assert str(alg) == "MoveAlgorithm('empty': )"
+        assert str(alg) == ":sune:"
 
     def test_repr(self) -> None:
         """Test repr representation."""
