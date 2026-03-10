@@ -22,9 +22,7 @@ This is a page to track what is being worked on, ideas and finished work
   * [] Enhancement: Sort with lower/upper bounds using excludion-inclusion
 
 * Progress/Done/Abandoned:
-  * [PROGRESS] Add algorithm support, e.g. :t-perm:
-  * [DONE] Add support for 2x2 and 4x4 in the main app
-  * [DONE] Enhancement: Check if MoveMeta has parity
+  * [DONE] Enhancement: Check if MoveMeta have move parity
   * [DONE] Bugfix: Patterns are created twice when starting the app
   * [DONE] Refactor so default generator is only using for configuration
   * [DONE] Use general knowledge derived from the permutations, not hardcoded
