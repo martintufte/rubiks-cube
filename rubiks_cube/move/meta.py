@@ -29,9 +29,9 @@ if TYPE_CHECKING:
     from rubiks_cube.configuration.types import CubePermutation
 
 
-# TODO: Consider removing hardcoded slice subsitituition
-def subsititute_slice_move(move: str) -> str:
-    """Subsititute the slice move."""
+# TODO: Consider removing hardcoded slice substitution
+def substitute_slice_move(move: str) -> str:
+    """Substitute the slice move."""
     slice_mapping: dict[str, tuple[str, str, str]] = {
         "M": ("L'", "R", "x'"),
         "E": ("U", "D'", "y'"),
@@ -49,9 +49,9 @@ def subsititute_slice_move(move: str) -> str:
     return SLICE_PATTERN.sub(replace_match, move)
 
 
-# TODO: Consider removing hardcoded wide subsitituition
-def subsititute_wide_move(move: str, cube_size: int) -> str:
-    """Subsititute the wide notation if wider than cube_size/2."""
+# TODO: Consider removing hardcoded wide substitution
+def substitute_wide_move(move: str, cube_size: int) -> str:
+    """Substitute the wide notation if wider than cube_size/2."""
     wide_mapping: dict[str, tuple[str, str, str]] = {
         "L": ("R", "x", "'"),
         "R": ("L", "x", ""),
@@ -219,13 +219,15 @@ class MoveMeta:
 
             elif re.search(SLICE_SEARCH, move) is not None:
                 classifications[move] = PermutationClassification.BASE
-                substitute = subsititute_slice_move(move).split()
-                substitutions[move] = tuple(substitute)
+                substituted = substitute_slice_move(move)
+                if substituted != move:
+                    substitutions[move] = tuple(substituted.split())
 
             elif re.search(WIDE_SEARCH, move) is not None:
                 classifications[move] = PermutationClassification.BASE
-                substitute = subsititute_wide_move(move, cube_size=cube_size).split()
-                substitutions[move] = tuple(substitute)
+                substituted = substitute_wide_move(move, cube_size=cube_size)
+                if substituted != move:
+                    substitutions[move] = tuple(substituted.split())
 
             else:
                 classifications[move] = PermutationClassification.BASE
@@ -245,15 +247,23 @@ class MoveMeta:
     ) -> MoveMeta:
         """Build the permutation meta using the provided permutations."""
         # Check that all moves have classification and same size and dtype
-        assert len(permutations) > 0
-        assert all(move in classifications for move in permutations)
+        if len(permutations) == 0:
+            raise ValueError("Permutations must be non-empty")
+        missing_classification_keys = [move for move in permutations if move not in classifications]
+        if missing_classification_keys:
+            raise ValueError(
+                "Classifications must contain all permutation keys. "
+                f"Missing keys: {missing_classification_keys}"
+            )
 
         # Check consistency with sizes and dtypes
         first_permutation = next(iter(permutations.values()))
         size = first_permutation.size
         dtype = first_permutation.dtype
-        assert all(permutation.size == size for permutation in permutations.values())
-        assert all(permutation.dtype == dtype for permutation in permutations.values())
+        if any(permutation.size != size for permutation in permutations.values()):
+            raise ValueError("All permutations must have the same size")
+        if any(permutation.dtype != dtype for permutation in permutations.values()):
+            raise ValueError("All permutations must have the same dtype")
 
         # Create identity permutation
         identity = np.arange(size, dtype=dtype)
@@ -349,5 +359,8 @@ class MoveMeta:
         """Apply a rotatation of the move by mapping it to the new move."""
         assert move in self.base_moves
         assert rotation in self.rotation_moves
+
+        if (move, rotation) not in self.conjugation_map:
+            raise ValueError(f"No conjugation mapping for move={move!r}, rotation={rotation!r}")
 
         return self.conjugation_map[(move, rotation)]
