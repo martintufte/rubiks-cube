@@ -27,12 +27,12 @@ if TYPE_CHECKING:
 LOGGER: Final = logging.getLogger(__name__)
 
 
-def get_empty_pattern(cube_size) -> CubePattern:
+def get_empty_pattern(cube_size: int) -> CubePattern:
     return np.zeros(6 * cube_size**2, dtype=int)
 
 
 def get_identity_pattern(cube_size: int) -> CubePattern:
-    pattern = (np.arange(6 * cube_size**2, dtype=int)) + 1
+    pattern = np.arange(6 * cube_size**2, dtype=int) + 1
     return pattern.astype(dtype=np.uint)
 
 
@@ -80,6 +80,44 @@ def generate_pattern_symmetries_from_subset(
         list_of_names.append(f"{prefix}-{subset.value}")
 
     return list_of_patterns, list_of_names
+
+
+def generate_pattern_symmetries_variations(
+    pattern: CubePattern,
+    symmetry: Symmetry,
+    move_meta: MoveMeta,
+) -> dict[Symmetry, CubePattern]:
+    """Generate variations of pattern symmetries.
+
+    Args:
+        pattern (CubePattern): Initial pattern.
+        symmetry (Symmetry): Initial symmetry.
+        move_meta (MoveMeta): Meta information about moves.
+
+    Returns:
+        dict[Symmetry, CubePattern]: Dictionary of variations.
+    """
+    # TODO: Note: This is not a group, consider renaming
+    symmetry_group = find_symmetry_groups(symmetry)
+
+    inv_initial_permutation = get_rubiks_cube_permutation(
+        sequence=MoveSequence(normal=symmetry_group[symmetry]),
+        move_meta=move_meta,
+        invert_after=True,
+    )
+
+    out_variations: dict[Symmetry, CubePattern] = {}
+
+    for symmetry_variation, moves in symmetry_group.items():
+        permutation_variation = get_rubiks_cube_permutation(
+            sequence=MoveSequence(normal=moves),
+            move_meta=move_meta,
+            initial_permutation=inv_initial_permutation,
+        )
+
+        out_variations[symmetry_variation] = pattern[permutation_variation]
+
+    return out_variations
 
 
 def pattern_from_generator(

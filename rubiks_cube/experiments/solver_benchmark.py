@@ -12,6 +12,7 @@ from tqdm import tqdm
 
 from rubiks_cube.autotagger.pattern import get_patterns
 from rubiks_cube.configuration.enumeration import Goal
+from rubiks_cube.configuration.enumeration import Symmetry
 from rubiks_cube.configuration.regex import canonical_key
 from rubiks_cube.move.generator import MoveGenerator
 from rubiks_cube.move.meta import MoveMeta
@@ -219,7 +220,7 @@ def run_benchmark(
     pattern = patterns.get(Goal.solved)
     assert pattern is not None
     assert len(pattern) == 1
-    variation = pattern.patterns[0]
+    variation = pattern.variations[Symmetry.none]
 
     # Apply index optimization to permutations
     index_optimizer = IndexOptimizer.from_cube_size(cube_size=move_meta.cube_size)

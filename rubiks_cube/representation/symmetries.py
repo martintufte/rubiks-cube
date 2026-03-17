@@ -10,6 +10,11 @@ def find_symmetry_groups(subset: Symmetry) -> dict[Symmetry, list[str]]:
         Symmetry.fb: ["x"],
         Symmetry.lr: ["z"],
     }
+    axis2_symmetries = {
+        Symmetry.e: [],
+        Symmetry.s: ["x"],
+        Symmetry.m: ["z"],
+    }
     face_symmetries = {
         Symmetry.up: [],
         Symmetry.down: ["x2"],
@@ -111,6 +116,8 @@ def find_symmetry_groups(subset: Symmetry) -> dict[Symmetry, list[str]]:
 
     if subset in axis_symmetries:
         return axis_symmetries
+    if subset in axis2_symmetries:
+        return axis2_symmetries
     if subset in face_symmetries:
         return face_symmetries
     if subset in edge_symmetries:

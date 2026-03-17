@@ -114,6 +114,7 @@ class Goal(Enum):
     leave_slice_m = "leave-slice-m"
     leave_slice_s = "leave-slice-s"
     solved = "solved"
+    xo = "xo"
     xo_fb = "xo-fb"
     xo_lr = "xo-lr"
     xo_ud = "xo-ud"

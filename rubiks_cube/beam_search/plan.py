@@ -6,6 +6,7 @@ from rubiks_cube.beam_search.interface import BeamPlan
 from rubiks_cube.beam_search.interface import BeamStep
 from rubiks_cube.beam_search.interface import Transition
 from rubiks_cube.configuration.enumeration import Goal
+from rubiks_cube.configuration.enumeration import Symmetry
 from rubiks_cube.move.generator import MoveGenerator
 
 DR_PLAN: Final[BeamPlan] = BeamPlan(
@@ -13,24 +14,26 @@ DR_PLAN: Final[BeamPlan] = BeamPlan(
     cube_size=3,
     steps=[
         BeamStep(
-            goals=[Goal.eo_lr, Goal.eo_fb, Goal.eo_ud],
+            goal=Goal.eo,
+            variations=[Symmetry.lr, Symmetry.fb, Symmetry.ud],
             transition=Transition(
                 search_side="both",
                 generator_map={
-                    Goal.none: MoveGenerator.from_str("<L, R, F, B, U, D>"),
+                    Symmetry.none: MoveGenerator.from_str("<L, R, F, B, U, D>"),
                 },
             ),
             max_search_depth=6,
             max_solutions=30,
         ),
         BeamStep(
-            goals=[Goal.dr_ud, Goal.dr_fb, Goal.dr_lr],
+            goal=Goal.dr,
+            variations=[Symmetry.lr, Symmetry.fb, Symmetry.ud],
             transition=Transition(
                 search_side="both",
                 generator_map={
-                    Goal.eo_fb: MoveGenerator.from_str("<L, R, F2, B2, U, D>"),
-                    Goal.eo_lr: MoveGenerator.from_str("<L2, R2, F, B, U, D>"),
-                    Goal.eo_ud: MoveGenerator.from_str("<L, R, F, B, U2, D2>"),
+                    Symmetry.lr: MoveGenerator.from_str("<L2, R2, F, B, U, D>"),
+                    Symmetry.fb: MoveGenerator.from_str("<L, R, F2, B2, U, D>"),
+                    Symmetry.ud: MoveGenerator.from_str("<L, R, F, B, U2, D2>"),
                 },
                 check_contained=True,
                 expand_variations=True,
@@ -46,24 +49,26 @@ HTR_PLAN: Final[BeamPlan] = BeamPlan(
     cube_size=3,
     steps=[
         BeamStep(
-            goals=[Goal.eo_lr, Goal.eo_fb, Goal.eo_ud],
+            goal=Goal.eo,
+            variations=[Symmetry.lr, Symmetry.fb, Symmetry.ud],
             transition=Transition(
                 search_side="both",
                 generator_map={
-                    Goal.none: MoveGenerator.from_str("<L, R, F, B, U, D>"),
+                    Symmetry.none: MoveGenerator.from_str("<L, R, F, B, U, D>"),
                 },
             ),
             max_search_depth=6,
             max_solutions=30,
         ),
         BeamStep(
-            goals=[Goal.dr_ud, Goal.dr_fb, Goal.dr_lr],
+            goal=Goal.dr,
+            variations=[Symmetry.lr, Symmetry.fb, Symmetry.ud],
             transition=Transition(
                 search_side="both",
                 generator_map={
-                    Goal.eo_fb: MoveGenerator.from_str("<L, R, F2, B2, U, D>"),
-                    Goal.eo_lr: MoveGenerator.from_str("<L2, R2, F, B, U, D>"),
-                    Goal.eo_ud: MoveGenerator.from_str("<L, R, F, B, U2, D2>"),
+                    Symmetry.lr: MoveGenerator.from_str("<L2, R2, F, B, U, D>"),
+                    Symmetry.fb: MoveGenerator.from_str("<L, R, F2, B2, U, D>"),
+                    Symmetry.ud: MoveGenerator.from_str("<L, R, F, B, U2, D2>"),
                 },
                 check_contained=True,
                 expand_variations=True,
@@ -72,13 +77,14 @@ HTR_PLAN: Final[BeamPlan] = BeamPlan(
             max_solutions=10,
         ),
         BeamStep(
-            goals=[Goal.htr],
+            goal=Goal.htr,
+            variations=[Symmetry.none],
             transition=Transition(
                 search_side="both",
                 generator_map={
-                    Goal.dr_ud: MoveGenerator.from_str("<L2, R2, F2, B2, U, D>"),
-                    Goal.dr_lr: MoveGenerator.from_str("<L, R, F2, B2, U2, D2>"),
-                    Goal.dr_fb: MoveGenerator.from_str("<L2, R2, F, B, U2, D2>"),
+                    Symmetry.lr: MoveGenerator.from_str("<L, R, F2, B2, U2, D2>"),
+                    Symmetry.ud: MoveGenerator.from_str("<L2, R2, F2, B2, U, D>"),
+                    Symmetry.fb: MoveGenerator.from_str("<L2, R2, F, B, U2, D2>"),
                 },
                 expand_variations=True,
             ),
@@ -93,51 +99,55 @@ SOLVED_PLAN: Final[BeamPlan] = BeamPlan(
     cube_size=3,
     steps=[
         BeamStep(
-            goals=[Goal.eo_lr, Goal.eo_fb, Goal.eo_ud],
+            goal=Goal.eo,
+            variations=[Symmetry.lr, Symmetry.fb, Symmetry.ud],
             transition=Transition(
                 search_side="both",
                 generator_map={
-                    Goal.none: MoveGenerator.from_str("<L, R, F, B, U, D>"),
+                    Symmetry.none: MoveGenerator.from_str("<L, R, F, B, U, D>"),
                 },
             ),
-            max_search_depth=7,
+            max_search_depth=6,
             max_solutions=30,
         ),
         BeamStep(
-            goals=[Goal.dr_ud, Goal.dr_fb, Goal.dr_lr],
+            goal=Goal.dr,
+            variations=[Symmetry.lr, Symmetry.fb, Symmetry.ud],
             transition=Transition(
                 search_side="both",
                 generator_map={
-                    Goal.eo_fb: MoveGenerator.from_str("<L, R, F2, B2, U, D>"),
-                    Goal.eo_lr: MoveGenerator.from_str("<L2, R2, F, B, U, D>"),
-                    Goal.eo_ud: MoveGenerator.from_str("<L, R, F, B, U2, D2>"),
+                    Symmetry.lr: MoveGenerator.from_str("<L2, R2, F, B, U, D>"),
+                    Symmetry.fb: MoveGenerator.from_str("<L, R, F2, B2, U, D>"),
+                    Symmetry.ud: MoveGenerator.from_str("<L, R, F, B, U2, D2>"),
                 },
                 check_contained=True,
                 expand_variations=True,
             ),
             max_search_depth=10,
-            max_solutions=5,
+            max_solutions=10,
         ),
         BeamStep(
-            goals=[Goal.htr],
+            goal=Goal.htr,
+            variations=[Symmetry.none],
             transition=Transition(
                 search_side="both",
                 generator_map={
-                    Goal.dr_ud: MoveGenerator.from_str("<L2, R2, F2, B2, U, D>"),
-                    Goal.dr_lr: MoveGenerator.from_str("<L, R, F2, B2, U2, D2>"),
-                    Goal.dr_fb: MoveGenerator.from_str("<L2, R2, F, B, U2, D2>"),
+                    Symmetry.lr: MoveGenerator.from_str("<L, R, F2, B2, U2, D2>"),
+                    Symmetry.fb: MoveGenerator.from_str("<L2, R2, F, B, U2, D2>"),
+                    Symmetry.ud: MoveGenerator.from_str("<L2, R2, F2, B2, U, D>"),
                 },
                 expand_variations=True,
             ),
-            max_search_depth=10,
-            max_solutions=5,
+            max_search_depth=12,
+            max_solutions=10,
         ),
         BeamStep(
-            goals=[Goal.solved],
+            goal=Goal.solved,
+            variations=[Symmetry.none],
             transition=Transition(
                 search_side="prev",
                 generator_map={
-                    Goal.htr: MoveGenerator.from_str("<L2, R2, F2, B2, U2, D2>"),
+                    Symmetry.none: MoveGenerator.from_str("<L2, R2, F2, B2, U2, D2>"),
                 },
                 expand_variations=True,
             ),
@@ -153,24 +163,26 @@ LEAVE_SLICE_PLAN: Final[BeamPlan] = BeamPlan(
     cube_size=3,
     steps=[
         BeamStep(
-            goals=[Goal.eo_lr, Goal.eo_fb, Goal.eo_ud],
+            goal=Goal.eo,
+            variations=[Symmetry.lr, Symmetry.fb, Symmetry.ud],
             transition=Transition(
                 search_side="both",
                 generator_map={
-                    Goal.none: MoveGenerator.from_str("<L, R, F, B, U, D>"),
+                    Symmetry.none: MoveGenerator.from_str("<L, R, F, B, U, D>"),
                 },
             ),
             max_search_depth=6,
             max_solutions=30,
         ),
         BeamStep(
-            goals=[Goal.dr_ud, Goal.dr_fb, Goal.dr_lr],
+            goal=Goal.dr,
+            variations=[Symmetry.lr, Symmetry.fb, Symmetry.ud],
             transition=Transition(
                 search_side="both",
                 generator_map={
-                    Goal.eo_fb: MoveGenerator.from_str("<L, R, F2, B2, U, D>"),
-                    Goal.eo_lr: MoveGenerator.from_str("<L2, R2, F, B, U, D>"),
-                    Goal.eo_ud: MoveGenerator.from_str("<L, R, F, B, U2, D2>"),
+                    Symmetry.lr: MoveGenerator.from_str("<L2, R2, F, B, U, D>"),
+                    Symmetry.fb: MoveGenerator.from_str("<L, R, F2, B2, U, D>"),
+                    Symmetry.ud: MoveGenerator.from_str("<L, R, F, B, U2, D2>"),
                 },
                 check_contained=True,
                 expand_variations=True,
@@ -179,13 +191,14 @@ LEAVE_SLICE_PLAN: Final[BeamPlan] = BeamPlan(
             max_solutions=10,
         ),
         BeamStep(
-            goals=[Goal.htr],
+            goal=Goal.htr,
+            variations=[Symmetry.none],
             transition=Transition(
                 search_side="both",
                 generator_map={
-                    Goal.dr_ud: MoveGenerator.from_str("<L2, R2, F2, B2, U, D>"),
-                    Goal.dr_lr: MoveGenerator.from_str("<L, R, F2, B2, U2, D2>"),
-                    Goal.dr_fb: MoveGenerator.from_str("<L2, R2, F, B, U2, D2>"),
+                    Symmetry.lr: MoveGenerator.from_str("<L, R, F2, B2, U2, D2>"),
+                    Symmetry.fb: MoveGenerator.from_str("<L2, R2, F, B, U2, D2>"),
+                    Symmetry.ud: MoveGenerator.from_str("<L2, R2, F2, B2, U, D>"),
                 },
                 expand_variations=True,
             ),
@@ -193,18 +206,32 @@ LEAVE_SLICE_PLAN: Final[BeamPlan] = BeamPlan(
             max_solutions=10,
         ),
         BeamStep(
-            goals=[Goal.leave_slice_m, Goal.leave_slice_e, Goal.leave_slice_s],
+            goal=Goal.solved,
+            variations=[Symmetry.none],
             transition=Transition(
                 search_side="prev",
                 generator_map={
-                    Goal.dr_ud: MoveGenerator.from_str("<L2, R2, F2, B2, U2, D2>"),
-                    Goal.dr_fb: MoveGenerator.from_str("<L2, R2, F2, B2, U2, D2>"),
-                    Goal.dr_lr: MoveGenerator.from_str("<L2, R2, F2, B2, U2, D2>"),
+                    Symmetry.none: MoveGenerator.from_str("<L2, R2, F2, B2, U2, D2>"),
+                },
+                expand_variations=True,
+            ),
+            max_search_depth=12,
+            max_solutions=5,
+        ),
+        BeamStep(
+            goal=Goal.leave_slice,
+            variations=[Symmetry.m, Symmetry.s, Symmetry.e],
+            transition=Transition(
+                search_side="prev",
+                generator_map={
+                    Symmetry.lr: MoveGenerator.from_str("<L2, R2, F2, B2, U2, D2>"),
+                    Symmetry.fb: MoveGenerator.from_str("<L2, R2, F2, B2, U2, D2>"),
+                    Symmetry.ud: MoveGenerator.from_str("<L2, R2, F2, B2, U2, D2>"),
                 },
                 allowed_goals_by_prev_goal={
-                    Goal.dr_ud: frozenset({Goal.leave_slice_e}),
-                    Goal.dr_fb: frozenset({Goal.leave_slice_s}),
-                    Goal.dr_lr: frozenset({Goal.leave_slice_m}),
+                    Symmetry.lr: frozenset({Symmetry.m}),
+                    Symmetry.fb: frozenset({Symmetry.s}),
+                    Symmetry.ud: frozenset({Symmetry.e}),
                 },
                 prev_goal_index=-2,
                 expand_variations=True,

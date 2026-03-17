@@ -12,11 +12,13 @@ from rubiks_cube.configuration.enumeration import Goal
 from rubiks_cube.configuration.enumeration import Metric
 from rubiks_cube.configuration.enumeration import SearchSide
 from rubiks_cube.configuration.enumeration import Status
+from rubiks_cube.configuration.enumeration import Symmetry
 from rubiks_cube.move.meta import MoveMeta
 from rubiks_cube.move.sequence import MoveSequence
 from rubiks_cube.move.sequence import measure
 from rubiks_cube.move.steps import MoveSteps
 from rubiks_cube.representation import get_rubiks_cube_permutation
+from rubiks_cube.representation.pattern import pattern_implies
 from rubiks_cube.solver.actions import get_actions
 from rubiks_cube.solver.bidirectional import BidirectionalSolver
 
@@ -53,6 +55,7 @@ class BeamCandidate:
     steps: MoveSteps
     side: SearchSide
     goal_history: tuple[Goal, ...]
+    variant_history: tuple[Symmetry, ...]
     cost: int
 
 
@@ -71,6 +74,7 @@ def search_sides(candidate: BeamCandidate, step: BeamStep) -> tuple[SearchSide, 
 @frozen
 class StepContext:
     goal: Goal
+    variant: Symmetry
     step: BeamStep
     solver: BidirectionalSolver
     pattern: CubePattern
@@ -80,25 +84,30 @@ class StepContext:
 class StepOptions:
     step: BeamStep
     contexts_by_generator: dict[str, list[StepContext]]
-    allowed_prev_goals_by_goal: dict[Goal, frozenset[Goal]] | None = None
+    allowed_prev_symm_by_symm: dict[Symmetry, frozenset[Symmetry]] | None = None
 
-    def transition_prev_goal(self, candidate: BeamCandidate) -> Goal:
-        return candidate.goal_history[self.step.transition.prev_goal_index]
+    def transition_prev_goal(self, candidate: BeamCandidate) -> tuple[Goal, Symmetry]:
+        idx = self.step.transition.prev_goal_index
+        return candidate.goal_history[idx], candidate.variant_history[idx]
 
-    def contexts_for_prev_goal(self, prev_goal: Goal) -> list[StepContext]:
-        generator = self.step.transition.generator_map[prev_goal]
+    def contexts_for_prev_variation(self, prev_symmetry: Symmetry) -> list[StepContext]:
+        generator = self.step.transition.generator_map.get(prev_symmetry)
+        if generator is None:
+            return []
         return self.contexts_by_generator.get(str(generator), [])
 
-    def allowed_prev_goals_for(self, goal: Goal) -> frozenset[Goal] | None:
-        if self.allowed_prev_goals_by_goal is None:
+    def allowed_prev_variants_for(self, symmetry: Symmetry) -> frozenset[Symmetry] | None:
+        if self.allowed_prev_symm_by_symm is None:
             return None
-        return self.allowed_prev_goals_by_goal.get(goal)
+        return self.allowed_prev_symm_by_symm.get(symmetry)
 
-    def allowed_goals_for_prev_goal(self, prev_goal: Goal) -> frozenset[Goal] | None:
+    def allowed_variation_for_prev_variation(
+        self, prev_variation: Symmetry
+    ) -> frozenset[Symmetry] | None:
         allowed = self.step.transition.allowed_goals_by_prev_goal
         if allowed is None:
             return None
-        return allowed.get(prev_goal)
+        return allowed.get(prev_variation)
 
 
 def select_top_k(candidates: list[BeamCandidate], k: int) -> list[BeamCandidate]:
@@ -128,7 +137,10 @@ def expand_variantions(candidate: BeamCandidate, move_meta: MoveMeta) -> list[Be
 def build_step_contexts(plan: BeamPlan, move_meta: MoveMeta) -> list[StepOptions]:
     patterns = get_patterns(cube_size=move_meta.cube_size)
     contexts: list[StepOptions] = []
-    prev_goals: tuple[Goal, ...] = ()
+
+    # Keep track of the previous goals and variations
+    prev_goal: Goal = Goal.none
+    prev_symmetries: tuple[Symmetry, ...] = ()
 
     for step in plan.steps:
         generator_map: dict[str, MoveGenerator] = {}
@@ -139,41 +151,53 @@ def build_step_contexts(plan: BeamPlan, move_meta: MoveMeta) -> list[StepOptions
         for generator_key, generator in generator_map.items():
             actions = get_actions(move_meta=move_meta, generator=generator)
             goal_contexts: list[StepContext] = []
-            for goal in step.goals:
-                pattern = patterns[goal]
-                for variation in pattern.patterns:
-                    solver = BidirectionalSolver.from_actions_and_pattern(
-                        actions=actions,
-                        pattern=variation,
-                        cube_size=move_meta.cube_size,
-                        validator=pattern.validator,
-                        optimize_indices=True,
-                        debug=False,
+
+            pattern = patterns[step.goal]
+            for variant, cube_pattern in pattern.variations.items():
+                if variant not in step.variations:
+                    continue
+                solver = BidirectionalSolver.from_actions_and_pattern(
+                    actions=actions,
+                    pattern=cube_pattern,
+                    cube_size=move_meta.cube_size,
+                    validator=pattern.validator,
+                    optimize_indices=True,
+                    debug=False,
+                )
+                goal_contexts.append(
+                    StepContext(
+                        goal=step.goal,
+                        variant=variant,
+                        step=step,
+                        solver=solver,
+                        pattern=cube_pattern,
                     )
-                    goal_contexts.append(
-                        StepContext(goal=goal, step=step, solver=solver, pattern=variation)
-                    )
+                )
             contexts_by_generator[generator_key] = goal_contexts
             if len(goal_contexts) == 0:
                 continue
 
-        allowed_prev_goals_by_goal: dict[Goal, frozenset[Goal]] | None = None
-        if step.transition.check_contained and len(prev_goals) > 0:
-            allowed_prev_goals_by_goal = {}
-            for goal in step.goals:
-                goal_pattern = patterns[goal]
-                allowed_prev_goals_by_goal[goal] = frozenset(
-                    prev_goal for prev_goal in prev_goals if patterns[prev_goal] in goal_pattern
+        allowed_prev_symm_by_symm: dict[Symmetry, frozenset[Symmetry]] | None = None
+        if step.transition.check_contained and len(prev_symmetries) > 0:
+            allowed_prev_symm_by_symm = {}
+
+            goal_pattern = patterns[step.goal]
+            for variation in step.variations:
+                allowed_prev_symm_by_symm[variation] = frozenset(
+                    prev_symm
+                    for prev_symm in prev_symmetries
+                    if pattern_implies(goal_pattern[variation], patterns[prev_goal][prev_symm])
                 )
 
         contexts.append(
             StepOptions(
                 step=step,
                 contexts_by_generator=contexts_by_generator,
-                allowed_prev_goals_by_goal=allowed_prev_goals_by_goal,
+                allowed_prev_symm_by_symm=allowed_prev_symm_by_symm,
             )
         )
-        prev_goals = tuple(step.goals)
+        prev_goal = step.goal
+        prev_symmetries = tuple(step.variations)
 
     return contexts
 
@@ -231,6 +255,7 @@ def beam_search(
             steps=MoveSteps(),
             side=SearchSide.normal,
             goal_history=(Goal.none,),
+            variant_history=(Symmetry.none,),
             cost=0,
         )
     ]
@@ -255,19 +280,20 @@ def beam_search(
                 variations = expand_variantions(candidate=candidate, move_meta=move_meta)
 
             permutations = [variation.permutation for variation in variations]
-            transition_prev_goal = step_options.transition_prev_goal(candidate)
-            step_contexts = step_options.contexts_for_prev_goal(transition_prev_goal)
-            allowed_goals = step_options.allowed_goals_for_prev_goal(transition_prev_goal)
-            prev_goal = candidate.goal_history[-1]
+            _transition_goal, transition_variant = step_options.transition_prev_goal(candidate)
+            step_contexts = step_options.contexts_for_prev_variation(transition_variant)
+            allowed_goals = step_options.allowed_variation_for_prev_variation(transition_variant)
+
+            prev_variant = candidate.variant_history[-1]
 
             for context in step_contexts:
                 if allowed_goals is not None and context.goal not in allowed_goals:
                     continue
 
                 if (
-                    allowed_prev_goals := step_options.allowed_prev_goals_for(context.goal)
+                    allowed_prev_variants := step_options.allowed_prev_variants_for(context.variant)
                 ) is not None:
-                    if prev_goal not in allowed_prev_goals:
+                    if prev_variant not in allowed_prev_variants:
                         continue
 
                 for side in search_sides(candidate=candidate, step=step_options.step):
@@ -301,8 +327,9 @@ def beam_search(
                         new_candidate = BeamCandidate(
                             permutation=new_permutation,
                             steps=variation.steps.with_step(solution),
-                            goal_history=(*variation.goal_history, context.goal),
                             side=side,
+                            goal_history=(*variation.goal_history, context.goal),
+                            variant_history=(*variation.variant_history, context.variant),
                             cost=variation.cost + measure(solution, metric=metric),
                         )
 
