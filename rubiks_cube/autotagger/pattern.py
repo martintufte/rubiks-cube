@@ -16,13 +16,13 @@ import numpy as np
 from rubiks_cube.autotagger.subset import distinguish_htr
 from rubiks_cube.configuration.enumeration import Goal
 from rubiks_cube.configuration.enumeration import Piece
-from rubiks_cube.configuration.enumeration import Symmetry
+from rubiks_cube.configuration.enumeration import Variant
 from rubiks_cube.move.generator import MoveGenerator
 from rubiks_cube.move.meta import MoveMeta
 from rubiks_cube.move.sequence import MoveSequence
 from rubiks_cube.representation.mask import get_piece_mask
 from rubiks_cube.representation.mask import get_rubiks_cube_mask
-from rubiks_cube.representation.pattern import generate_pattern_symmetries_variations
+from rubiks_cube.representation.pattern import generate_pattern_variants
 from rubiks_cube.representation.pattern import get_empty_pattern
 from rubiks_cube.representation.pattern import get_identity_pattern
 from rubiks_cube.representation.pattern import merge_patterns
@@ -42,24 +42,23 @@ GET_PATTERNS_LOCK = Lock()
 
 @attrs.mutable
 class Pattern:
-    variations: dict[Symmetry, CubePattern]
+    variants: dict[Variant, CubePattern]
     validator: PermutationValidator | None = None
 
     @classmethod
     def from_settings(
         cls,
         move_meta: MoveMeta,
-        symmetry: Symmetry,
+        variant: Variant,
         solved_sequence: MoveSequence | None = None,
         pieces: list[Piece] | None = None,
         orientation_generator: MoveGenerator | None = None,
     ) -> Self:
-        """Create Pattern from symmetry, a solved sequence and orientations.
+        """Create Pattern from a variant, a solved sequence and orientations.
 
         Args:
             move_meta (MoveMeta): Meta information about moves.
-            symmetry (Symmetry, optional): Symmetry for creating variations.
-                Defaults to Symmetry.none.
+            variant (Variant, optional): Initial variant to create other variants from.
             solved_sequence (MoveSequence, optional): Sequence that only fixate the pattern.
             pieces (list[Piece], optional): List of pieces.
             orientation_generator (MoveGenerator, optional): Generators conserving orientations.
@@ -89,64 +88,62 @@ class Pattern:
         else:
             orientations_pattern = get_empty_pattern(cube_size=move_meta.cube_size)
 
-        # Store all variations
-        variations = {symmetry: merge_patterns((fixate_pattern, orientations_pattern))}
+        # Store all variants
+        variants = {variant: merge_patterns((fixate_pattern, orientations_pattern))}
 
-        if symmetry is not Symmetry.none:
-            initial_symmetry, initial_pattern = next(iter(variations.items()))
-            variations = generate_pattern_symmetries_variations(
+        # Create new variants from the initial variant
+        if variant is not Variant.none:
+            initial_variant, initial_pattern = next(iter(variants.items()))
+            variants = generate_pattern_variants(
                 pattern=initial_pattern,
-                symmetry=initial_symmetry,
+                initial_variant=initial_variant,
                 move_meta=move_meta,
             )
-        return cls(variations=variations)
+        return cls(variants=variants)
 
     @classmethod
     def from_merge(
         cls,
         move_meta: MoveMeta,
-        symmetry: Symmetry,
+        variant: Variant,
         patterns: Sequence[CubePattern],
     ) -> Self:
-        variations = {symmetry: merge_patterns(patterns=patterns)}
-        if symmetry is not Symmetry.none:
-            initial_symmetry, initial_pattern = next(iter(variations.items()))
-            variations = generate_pattern_symmetries_variations(
+        variants = {variant: merge_patterns(patterns=patterns)}
+        if variant is not Variant.none:
+            initial_variant, initial_pattern = next(iter(variants.items()))
+            variants = generate_pattern_variants(
                 pattern=initial_pattern,
-                symmetry=initial_symmetry,
+                initial_variant=initial_variant,
                 move_meta=move_meta,
             )
-        return cls(variations=variations)
+        return cls(variants=variants)
 
     def __and__(self, other: Pattern) -> Pattern:
         return Pattern(
-            variations={
-                symmetry: merge_patterns((pattern, other_pattern))
-                for symmetry, pattern in self.variations.items()
-                for _other_symmetry, other_pattern in other.variations.items()
+            variants={
+                variant: merge_patterns((pattern, other_pattern))
+                for variant, pattern in self.variants.items()
+                for _other_variant, other_pattern in other.variants.items()
             },
         )
 
-    def __getitem__(self, key: Symmetry) -> CubePattern:
-        return self.variations[key]
+    def __getitem__(self, key: Variant) -> CubePattern:
+        return self.variants[key]
 
     def __contains__(self, other: Any) -> bool:
         if isinstance(other, Pattern):
             return any(
-                pattern_implies(variation, other_variation)
-                for variation in self.variations.values()
-                for other_variation in other.variations.values()
+                pattern_implies(variant, other_variant)
+                for variant in self.variants.values()
+                for other_variant in other.variants.values()
             )
         return False
 
     def __len__(self) -> int:
-        return len(self.variations)
+        return len(self.variants)
 
     def match(self, permutation: CubePermutation) -> bool:
-        if any(
-            np.array_equal(variation[permutation], variation)
-            for variation in self.variations.values()
-        ):
+        if any(np.array_equal(variant[permutation], variant) for variant in self.variants.values()):
             if self.validator is not None:
                 return self.validator(permutation)
             return True
@@ -154,7 +151,7 @@ class Pattern:
 
     def calc_combinations(self, move_meta: MoveMeta) -> int:
         """Sum of the number of combinations for each pattern."""
-        initial_pattern = next(iter(self.variations.values()))
+        initial_pattern = next(iter(self.variants.values()))
         n = len(self) * pattern_combinations(initial_pattern, move_meta)
 
         # TODO: Fix hack for counting with validator. Right now, only htr has a validator
@@ -167,45 +164,51 @@ class Pattern:
         return log2(self.calc_combinations(move_meta=move_meta))
 
 
+# TODO: Implement
+def get_2x2_patterns(move_meta: MoveMeta) -> dict[Goal, Pattern]:
+    patterns: dict[Goal, Pattern] = {}
+    return patterns
+
+
 def get_3x3_patterns(move_meta: MoveMeta) -> dict[Goal, Pattern]:
     patterns: dict[Goal, Pattern] = {}
 
     # Only fixate
-    fixate_goals: dict[Goal, tuple[list[str], Symmetry]] = {
-        Goal.none: (["x", "y"], Symmetry.none),
-        Goal.cp_layer: (["M'", "S", "Dw"], Symmetry.up),
-        Goal.ep_layer: (["M2", "D2", "F2", "B2", "Dw"], Symmetry.up),
-        Goal.layer: (["Dw"], Symmetry.up),
-        Goal.cross: (["R", "L", "U2", "R2", "L2", "U2", "R", "L", "U"], Symmetry.down),
-        Goal.f2l: (["U"], Symmetry.down),
-        Goal.x_cross: (["R", "L'", "U2", "R2", "L", "U2", "R", "U"], Symmetry.down_bl),
-        Goal.xx_cross_adjacent: (["R", "L'", "U2", "R'", "L", "U"], Symmetry.down_b),
-        Goal.xx_cross_diagonal: (["R'", "L'", "U2", "R", "L", "U"], Symmetry.down_bl_fr),
-        Goal.xxx_cross: (["R", "U", "R'", "U"], Symmetry.down_fr),
-        Goal.block_1x1x3: (["Fw", "Rw"], Symmetry.bl),
-        Goal.block_1x2x2: (["U", "R", "Fw"], Symmetry.back_dl),
-        Goal.block_1x2x3: (["U", "Rw"], Symmetry.dl),
-        Goal.block_2x2x2: (["U", "R", "F"], Symmetry.down_bl),
-        Goal.block_2x2x3: (["U", "R"], Symmetry.dl),
-        Goal.corners: (["M'", "S", "E"], Symmetry.none),
+    fixate_goals: dict[Goal, tuple[list[str], Variant]] = {
+        Goal.none: (["x", "y"], Variant.none),
+        Goal.cp_layer: (["M'", "S", "Dw"], Variant.up),
+        Goal.ep_layer: (["M2", "D2", "F2", "B2", "Dw"], Variant.up),
+        Goal.layer: (["Dw"], Variant.up),
+        Goal.cross: (["R", "L", "U2", "R2", "L2", "U2", "R", "L", "U"], Variant.down),
+        Goal.f2l: (["U"], Variant.down),
+        Goal.x_cross: (["R", "L'", "U2", "R2", "L", "U2", "R", "U"], Variant.down_bl),
+        Goal.xx_cross_adjacent: (["R", "L'", "U2", "R'", "L", "U"], Variant.down_b),
+        Goal.xx_cross_diagonal: (["R'", "L'", "U2", "R", "L", "U"], Variant.down_bl_fr),
+        Goal.xxx_cross: (["R", "U", "R'", "U"], Variant.down_fr),
+        Goal.block_1x1x3: (["Fw", "Rw"], Variant.bl),
+        Goal.block_1x2x2: (["U", "R", "Fw"], Variant.back_dl),
+        Goal.block_1x2x3: (["U", "Rw"], Variant.dl),
+        Goal.block_2x2x2: (["U", "R", "F"], Variant.down_bl),
+        Goal.block_2x2x3: (["U", "R"], Variant.dl),
+        Goal.corners: (["M'", "S", "E"], Variant.none),
         Goal.edges: (
             ["E2", "R", "L", "S2", "L", "R'", "S2", "R2", "S", "M", "S", "M'"],
-            Symmetry.none,
+            Variant.none,
         ),
-        Goal.solved: ([], Symmetry.none),
-        Goal.minus_slice: (["M"], Symmetry.m),
+        Goal.solved: ([], Variant.none),
+        Goal.minus_slice: (["M"], Variant.m),
     }
-    for goal, (moves, symmetry) in fixate_goals.items():
+    for goal, (moves, variant) in fixate_goals.items():
         patterns[goal] = Pattern.from_settings(
             move_meta=move_meta,
-            symmetry=symmetry,
+            variant=variant,
             solved_sequence=MoveSequence(moves),
         )
 
     # Orientations
     patterns[Goal.co_face] = Pattern.from_settings(
         move_meta=move_meta,
-        symmetry=Symmetry.up,
+        variant=Variant.up,
         solved_sequence=MoveSequence(["y"]),
         pieces=[Piece.corner],
         orientation_generator=MoveGenerator.from_str("<U>"),
@@ -215,37 +218,37 @@ def get_3x3_patterns(move_meta: MoveMeta) -> dict[Goal, Pattern]:
         solved_sequence=MoveSequence(["y"]),
         pieces=[Piece.edge],
         orientation_generator=MoveGenerator.from_str("<U>"),
-        symmetry=Symmetry.up,
+        variant=Variant.up,
     )
     patterns[Goal.face] = Pattern.from_settings(
         move_meta=move_meta,
+        variant=Variant.up,
         solved_sequence=MoveSequence(["y"]),
         pieces=[Piece.corner, Piece.edge],
         orientation_generator=MoveGenerator.from_str("<U>"),
-        symmetry=Symmetry.up,
     )
 
     # Symmetric edge orientations
     edge_orientation_symmetric = {
-        Goal.eo: ("<F2, B2, L, R, U, D>", Symmetry.fb),
-        Goal.eo_floppy: ("<L2, R2, U2, D2>", Symmetry.fb),
+        Goal.eo: ("<F2, B2, L, R, U, D>", Variant.fb),
+        Goal.eo_floppy: ("<L2, R2, U2, D2>", Variant.fb),
     }
-    for goal, (generator, symmetry) in edge_orientation_symmetric.items():
+    for goal, (generator, variant) in edge_orientation_symmetric.items():
         patterns[goal] = Pattern.from_settings(
             move_meta=move_meta,
+            variant=variant,
             pieces=[Piece.edge],
             orientation_generator=MoveGenerator.from_str(generator),
-            symmetry=symmetry,
         )
 
     # Symmetric corner orientations
     corner_orientation_symmetric = {
-        Goal.co: ("<F, B, L2, R2, U2, D2>", Symmetry.fb),
+        Goal.co: ("<F, B, L2, R2, U2, D2>", Variant.fb),
     }
-    for goal, (generator, symmetry) in corner_orientation_symmetric.items():
+    for goal, (generator, variant) in corner_orientation_symmetric.items():
         patterns[goal] = Pattern.from_settings(
             move_meta=move_meta,
-            symmetry=symmetry,
+            variant=variant,
             pieces=[Piece.corner],
             orientation_generator=MoveGenerator.from_str(generator),
         )
@@ -253,7 +256,7 @@ def get_3x3_patterns(move_meta: MoveMeta) -> dict[Goal, Pattern]:
     # Symmetric center orientations
     patterns[Goal.xo] = Pattern.from_settings(
         move_meta=move_meta,
-        symmetry=Symmetry.fb,
+        variant=Variant.fb,
         pieces=[Piece.center],
         orientation_generator=MoveGenerator.from_str("<x2, z>"),
     )
@@ -274,7 +277,7 @@ def get_3x3_patterns(move_meta: MoveMeta) -> dict[Goal, Pattern]:
     for goal, generator in edge_orientation_tags.items():
         patterns[goal] = Pattern.from_settings(
             move_meta=move_meta,
-            symmetry=Symmetry.none,
+            variant=Variant.none,
             pieces=[Piece.edge],
             orientation_generator=MoveGenerator.from_str(generator),
         )
@@ -286,7 +289,7 @@ def get_3x3_patterns(move_meta: MoveMeta) -> dict[Goal, Pattern]:
     for goal, generator in corner_orientation_tags.items():
         patterns[goal] = Pattern.from_settings(
             move_meta=move_meta,
-            symmetry=Symmetry.none,
+            variant=Variant.none,
             pieces=[Piece.corner],
             orientation_generator=MoveGenerator.from_str(generator),
         )
@@ -294,30 +297,30 @@ def get_3x3_patterns(move_meta: MoveMeta) -> dict[Goal, Pattern]:
     # Composite patterns
     patterns[Goal.xo_htr] = Pattern.from_merge(
         move_meta=move_meta,
-        symmetry=Symmetry.none,
-        patterns=list(patterns[Goal.xo].variations.values()),
+        variant=Variant.none,
+        patterns=list(patterns[Goal.xo].variants.values()),
     )
 
     patterns[Goal.dr] = Pattern.from_merge(
         move_meta=move_meta,
-        symmetry=Symmetry.ud,
+        variant=Variant.ud,
         patterns=[
-            patterns[Goal.co][Symmetry.ud],
-            patterns[Goal.eo][Symmetry.fb],
-            patterns[Goal.eo][Symmetry.lr],
-            patterns[Goal.xo_htr][Symmetry.none],
+            patterns[Goal.co][Variant.ud],
+            patterns[Goal.eo][Variant.fb],
+            patterns[Goal.eo][Variant.lr],
+            patterns[Goal.xo_htr][Variant.none],
         ],
     )
 
     patterns[Goal.leave_slice] = Pattern.from_merge(
         move_meta=move_meta,
-        symmetry=Symmetry.e,
+        variant=Variant.e,
         patterns=[
-            patterns[Goal.minus_slice][Symmetry.e],
-            patterns[Goal.eo][Symmetry.fb],
-            patterns[Goal.eo][Symmetry.lr],
-            patterns[Goal.xo][Symmetry.fb],
-            patterns[Goal.xo][Symmetry.lr],
+            patterns[Goal.minus_slice][Variant.e],
+            patterns[Goal.eo][Variant.fb],
+            patterns[Goal.eo][Variant.lr],
+            patterns[Goal.xo][Variant.fb],
+            patterns[Goal.xo][Variant.lr],
         ],
     )
 
@@ -326,12 +329,18 @@ def get_3x3_patterns(move_meta: MoveMeta) -> dict[Goal, Pattern]:
     # Add real htr with permutation validator
     htr_like = patterns[Goal.htr_like]
     patterns[Goal.htr] = Pattern(
-        variations=htr_like.variations,
+        variants=htr_like.variants,
         validator=lambda permutation: distinguish_htr(permutation) == "real",
     )
 
-    # TODO(martin): Consider doing composite patterns Goal.xx_cross (adj or diag)
+    # TODO: Consider doing composite patterns Goal.xx_cross (adj or diag)
 
+    return patterns
+
+
+# TODO: Implement
+def get_4x4_patterns(move_meta: MoveMeta) -> dict[Goal, Pattern]:
+    patterns: dict[Goal, Pattern] = {}
     return patterns
 
 
@@ -355,7 +364,14 @@ def _get_cached_patterns(cube_size: int) -> dict[Goal, Pattern]:
     move_meta = MoveMeta.from_cube_size(cube_size)
 
     t = timeit.default_timer()
-    patterns = get_3x3_patterns(move_meta=move_meta)
+    if move_meta.cube_size == 2:
+        patterns = get_2x2_patterns(move_meta=move_meta)
+    elif move_meta.cube_size == 3:
+        patterns = get_3x3_patterns(move_meta=move_meta)
+    elif move_meta.cube_size == 4:
+        patterns = get_4x4_patterns(move_meta=move_meta)
+    else:
+        raise ValueError(f"Cube size is not supported. Expected 2, 3 or 4, got {cube_size}")
 
     LOGGER.debug(f"Created patterns in {timeit.default_timer() - t:.3f} seconds.")
 

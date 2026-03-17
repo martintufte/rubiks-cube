@@ -10,11 +10,11 @@ from bidict import bidict
 from bidict._exc import ValueDuplicationError
 
 from rubiks_cube.configuration.enumeration import Piece
-from rubiks_cube.configuration.enumeration import Symmetry
+from rubiks_cube.configuration.enumeration import Variant
 from rubiks_cube.move.sequence import MoveSequence
 from rubiks_cube.representation import get_rubiks_cube_permutation
 from rubiks_cube.representation.mask import piece_masks
-from rubiks_cube.representation.symmetries import find_symmetry_groups
+from rubiks_cube.representation.symmetries import find_variant_group
 
 if TYPE_CHECKING:
     from collections.abc import Sequence
@@ -41,83 +41,41 @@ def get_solved_pattern(cube_size: int) -> CubePattern:
     return pattern.astype(dtype=np.uint)
 
 
-def generate_pattern_symmetries_from_subset(
+def generate_pattern_variants(
     pattern: CubePattern,
-    symmetry: Symmetry,
+    initial_variant: Variant,
     move_meta: MoveMeta,
-    prefix: str = "",
-) -> tuple[list[CubePattern], list[str]]:
-    """Generate list of pattern symmetries of the cube using the subset as base.
-
-    Args:
-        pattern (CubePattern): Cube pattern.
-        symmetry (Symmetry): Symmetry of the cube.
-        move_meta (MoveMeta): Meta information about moves.
-        prefix (str, optional): Prefix of the symmetry. Defaults to "".
-
-    Returns:
-        tuple[list[CubePattern], list[str]]: List of pattern symmetries and their names.
-    """
-    symmetry_group = find_symmetry_groups(symmetry)
-
-    inv_offset = get_rubiks_cube_permutation(
-        sequence=MoveSequence(normal=symmetry_group[symmetry]),
-        move_meta=move_meta,
-        invert_after=True,
-    )
-
-    list_of_patterns: list[CubePattern] = []
-    list_of_names: list[str] = []
-
-    for subset, moves in symmetry_group.items():
-        permutation = get_rubiks_cube_permutation(
-            sequence=MoveSequence(normal=moves),
-            move_meta=move_meta,
-            initial_permutation=inv_offset,
-        )
-
-        list_of_patterns.append(pattern[permutation])
-        list_of_names.append(f"{prefix}-{subset.value}")
-
-    return list_of_patterns, list_of_names
-
-
-def generate_pattern_symmetries_variations(
-    pattern: CubePattern,
-    symmetry: Symmetry,
-    move_meta: MoveMeta,
-) -> dict[Symmetry, CubePattern]:
-    """Generate variations of pattern symmetries.
+) -> dict[Variant, CubePattern]:
+    """Generate variants of pattern symmetries.
 
     Args:
         pattern (CubePattern): Initial pattern.
-        symmetry (Symmetry): Initial symmetry.
+        initial_variant (Variant): Initial variant.
         move_meta (MoveMeta): Meta information about moves.
 
     Returns:
-        dict[Symmetry, CubePattern]: Dictionary of variations.
+        dict[Variant, CubePattern]: Dictionary of variants.
     """
-    # TODO: Note: This is not a group, consider renaming
-    symmetry_group = find_symmetry_groups(symmetry)
+    variant_group = find_variant_group(initial_variant)
 
     inv_initial_permutation = get_rubiks_cube_permutation(
-        sequence=MoveSequence(normal=symmetry_group[symmetry]),
+        sequence=MoveSequence(normal=variant_group[initial_variant]),
         move_meta=move_meta,
         invert_after=True,
     )
 
-    out_variations: dict[Symmetry, CubePattern] = {}
+    out_variants: dict[Variant, CubePattern] = {}
 
-    for symmetry_variation, moves in symmetry_group.items():
-        permutation_variation = get_rubiks_cube_permutation(
+    for variant, moves in variant_group.items():
+        permutation_variant = get_rubiks_cube_permutation(
             sequence=MoveSequence(normal=moves),
             move_meta=move_meta,
             initial_permutation=inv_initial_permutation,
         )
 
-        out_variations[symmetry_variation] = pattern[permutation_variation]
+        out_variants[variant] = pattern[permutation_variant]
 
-    return out_variations
+    return out_variants
 
 
 def pattern_from_generator(

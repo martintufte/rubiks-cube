@@ -8,7 +8,7 @@ from rubiks_cube.configuration.enumeration import Goal
 from rubiks_cube.configuration.enumeration import SearchSide
 from rubiks_cube.configuration.enumeration import SolveStrategy
 from rubiks_cube.configuration.enumeration import Status
-from rubiks_cube.configuration.enumeration import Symmetry
+from rubiks_cube.configuration.enumeration import Variant
 from rubiks_cube.representation import get_rubiks_cube_permutation
 from rubiks_cube.solver.actions import get_actions
 from rubiks_cube.solver.bidirectional import BidirectionalSolver
@@ -30,7 +30,7 @@ def solve_pattern(
     algorithms: list[MoveAlgorithm] | None = None,
     goal_sequence: MoveSequence | None = None,
     goal: Goal = Goal.solved,
-    variations: list[Symmetry] | None = None,
+    variants: list[Variant] | None = None,
     min_search_depth: int = 0,
     max_search_depth: int = 10,
     max_solutions: int = 1,
@@ -119,21 +119,21 @@ def solve_pattern(
     status = Status.Failure
     total_walltime = 0.0
 
-    if variations is not None and len(variations) > 0:
-        if not all(variation in pattern.variations for variation in variations):
-            raise ValueError(f"Got unknown variations {variations} for goal {goal}")
+    if variants is not None and len(variants) > 0:
+        if not all(variant in pattern.variants for variant in variants):
+            raise ValueError(f"Got unknown variants {variants} for goal {goal}")
     else:
-        variations = list(pattern.variations)
+        variants = list(pattern.variants)
 
     for side in search_sides:
-        for variation in variations:
+        for variant in variants:
             remaining_time = max_time - total_walltime
             if remaining_time <= 0:
                 break
 
             solver = BidirectionalSolver.from_actions_and_pattern(
                 actions=actions,
-                pattern=pattern[variation],
+                pattern=pattern[variant],
                 cube_size=move_meta.cube_size,
                 validator=pattern.validator,
                 optimize_indices=True,

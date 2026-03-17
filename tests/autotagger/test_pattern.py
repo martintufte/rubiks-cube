@@ -5,7 +5,7 @@ import pytest
 from rubiks_cube.autotagger.pattern import Pattern
 from rubiks_cube.autotagger.pattern import get_patterns
 from rubiks_cube.configuration.enumeration import Goal
-from rubiks_cube.configuration.enumeration import Symmetry
+from rubiks_cube.configuration.enumeration import Variant
 from rubiks_cube.move.meta import MoveMeta
 from rubiks_cube.move.sequence import MoveSequence
 from rubiks_cube.representation import get_rubiks_cube_permutation
@@ -18,16 +18,16 @@ class TestPatternBasics:
     def test_pattern_initialization(self) -> None:
         """Test Pattern initialization."""
         pattern = get_identity_pattern(cube_size=3)
-        pattern = Pattern(variations={Symmetry.none: pattern})
+        pattern = Pattern(variants={Variant.none: pattern})
         assert len(pattern) == 1
 
     def test_pattern_repr(self) -> None:
         """Test Pattern string representation."""
         pattern = get_identity_pattern(cube_size=3)
-        pattern = Pattern(variations={Symmetry.none: pattern})
+        pattern = Pattern(variants={Variant.none: pattern})
         repr_str = repr(pattern)
         assert "Pattern" in repr_str
-        assert "variations" in repr_str
+        assert "variants" in repr_str
 
 
 class TestPatternOperations:
@@ -36,8 +36,8 @@ class TestPatternOperations:
         """Test OR operation between Patternes."""
         pattern1 = get_identity_pattern(cube_size=3)
         pattern2 = get_empty_pattern(cube_size=3)
-        pattern1 = Pattern(variations={Symmetry.none: pattern1})
-        pattern2 = Pattern(variations={Symmetry.none: pattern2})
+        pattern1 = Pattern(variants={Variant.none: pattern1})
+        pattern2 = Pattern(variants={Variant.none: pattern2})
 
         result = pattern1 | pattern2  # ty: ignore[unsupported-operator]
         assert len(result) == 2
@@ -47,8 +47,8 @@ class TestPatternOperations:
         """Test AND operation between Patternes."""
         pattern1 = get_identity_pattern(cube_size=3)
         pattern2 = get_identity_pattern(cube_size=3)
-        pattern1 = Pattern(variations={Symmetry.none: pattern1})
-        pattern2 = Pattern(variations={Symmetry.none: pattern2})
+        pattern1 = Pattern(variants={Variant.none: pattern1})
+        pattern2 = Pattern(variants={Variant.none: pattern2})
 
         result = pattern1 & pattern2
         assert len(result) >= 1  # At least one merged pattern
@@ -56,14 +56,14 @@ class TestPatternOperations:
     def test_pattern_contains_self(self) -> None:
         """Test that pattern contains itself."""
         pattern = get_identity_pattern(cube_size=3)
-        pattern1 = Pattern(variations={Symmetry.none: pattern})
-        pattern2 = Pattern(variations={Symmetry.none: pattern})
+        pattern1 = Pattern(variants={Variant.none: pattern})
+        pattern2 = Pattern(variants={Variant.none: pattern})
         assert pattern1 in pattern2
 
     def test_pattern_contains_invalid_type(self) -> None:
         """Test that contains returns False for invalid types."""
         pattern = get_identity_pattern(cube_size=3)
-        pattern = Pattern(variations={Symmetry.none: pattern})
+        pattern = Pattern(variants={Variant.none: pattern})
         # Contains checks for Pattern type, so these will return False
         assert "invalid" not in pattern
         assert 42 not in pattern
@@ -73,7 +73,7 @@ class TestPatternMatch:
     def test_match_solved_cube(self) -> None:
         """Test matching solved cube."""
         pattern = get_identity_pattern(cube_size=3)
-        pattern = Pattern(variations={Symmetry.none: pattern})
+        pattern = Pattern(variants={Variant.none: pattern})
         permutation = get_identity_permutation(cube_size=3)
         assert pattern.match(permutation)
 
@@ -81,7 +81,7 @@ class TestPatternMatch:
         """Test that solved pattern doesn't match scrambled cube."""
         move_meta = MoveMeta.from_cube_size(3)
         pattern = get_identity_pattern(cube_size=3)
-        pattern = Pattern(variations={Symmetry.none: pattern})
+        pattern = Pattern(variants={Variant.none: pattern})
         permutation = get_rubiks_cube_permutation(MoveSequence.from_str("U"), move_meta)
         assert not pattern.match(permutation)
 
@@ -89,7 +89,7 @@ class TestPatternMatch:
         """Test matching with multiple patterns."""
         pattern1 = get_identity_pattern(cube_size=3)
         pattern2 = get_empty_pattern(cube_size=3)
-        pattern = Pattern(variations={Symmetry.front: pattern1, Symmetry.back: pattern2})
+        pattern = Pattern(variants={Variant.front: pattern1, Variant.back: pattern2})
 
         # Solved cube should match first pattern
         permutation = get_identity_permutation(cube_size=3)
@@ -102,7 +102,7 @@ class TestPatternProperties:
     def test_combinations_and_entropy(self) -> None:
         """Test combinations and entropy properties together."""
         pattern = get_identity_pattern(cube_size=3)
-        pattern = Pattern(variations={Symmetry.none: pattern})
+        pattern = Pattern(variants={Variant.none: pattern})
 
         # Test combinations
         combinations = pattern.calc_combinations(move_meta=self.move_meta)
@@ -174,12 +174,12 @@ class TestPatternEdgeCases:
 
     def test_empty_pattern(self) -> None:
         """Test creating empty pattern."""
-        pattern = Pattern(variations={})
+        pattern = Pattern(variants={})
         assert len(pattern) == 0
 
     def test_pattern_match_with_empty_patterns(self) -> None:
         """Test matching with empty patterns list."""
-        pattern = Pattern(variations={})
+        pattern = Pattern(variants={})
         permutation = get_rubiks_cube_permutation(MoveSequence(), move_meta=self.move_meta)
         # Empty pattern should not match anything
         assert not pattern.match(permutation)
@@ -187,7 +187,7 @@ class TestPatternEdgeCases:
     def test_pattern_entropy_with_single_pattern(self) -> None:
         """Test entropy calculation with single pattern."""
         pattern = get_identity_pattern(cube_size=3)
-        pattern = Pattern(variations={Symmetry.none: pattern})
+        pattern = Pattern(variants={Variant.none: pattern})
         # Entropy should be finite and non-negative
         assert 0 <= pattern.entropy(self.move_meta) < float("inf")
 
@@ -201,30 +201,30 @@ class TestGetPatternsExpected:
         pattern = self.patterns.get(Goal.solved)
         assert pattern is not None
         assert len(pattern) == 1
-        assert next(iter(pattern.variations.values())).size == self.move_meta.size
+        assert next(iter(pattern.variants.values())).size == self.move_meta.size
 
     def test_cross_pattern(self) -> None:
         """Test retrieving cross pattern."""
         pattern = self.patterns.get(Goal.cross)
         assert pattern is not None
         assert len(pattern) == 6
-        assert next(iter(pattern.variations.values())).size == self.move_meta.size
+        assert next(iter(pattern.variants.values())).size == self.move_meta.size
 
     def test_f2l_pattern(self) -> None:
         """Test retrieving F2L pattern."""
         pattern = self.patterns.get(Goal.f2l)
         assert pattern is not None
         assert len(pattern) == 6
-        assert next(iter(pattern.variations.values())).size == self.move_meta.size
+        assert next(iter(pattern.variants.values())).size == self.move_meta.size
 
     def test_none_pattern(self) -> None:
         """Test retrieving empty/none pattern."""
         pattern = self.patterns.get(Goal.none)
         assert pattern is not None
         assert len(pattern) == 1
-        assert next(iter(pattern.variations.values())).size == self.move_meta.size
+        assert next(iter(pattern.variants.values())).size == self.move_meta.size
         # Empty pattern should be all zeros
-        assert (next(iter(pattern.variations.values())) == 0).all()
+        assert (next(iter(pattern.variants.values())) == 0).all()
 
     def test_pattern_matches_permutation(self) -> None:
         """Test that solved pattern matches identity permutation."""

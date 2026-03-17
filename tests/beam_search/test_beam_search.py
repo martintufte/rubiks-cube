@@ -8,7 +8,7 @@ from rubiks_cube.beam_search.solver import beam_search
 from rubiks_cube.beam_search.solver import build_step_contexts
 from rubiks_cube.configuration.enumeration import Goal
 from rubiks_cube.configuration.enumeration import Status
-from rubiks_cube.configuration.enumeration import Symmetry
+from rubiks_cube.configuration.enumeration import Variant
 from rubiks_cube.move.generator import MoveGenerator
 from rubiks_cube.move.meta import MoveMeta
 from rubiks_cube.move.sequence import MoveSequence
@@ -22,11 +22,11 @@ def test_beam_search_transition_switch_solves_on_inverse() -> None:
         steps=[
             BeamStep(
                 goal=Goal.solved,
-                variations=[Symmetry.none],
+                variants=[Variant.none],
                 transition=Transition(
                     search_side="inverse",
                     generator_map={
-                        Symmetry.none: MoveGenerator.from_str("<L, R, F, B, U, D>"),
+                        Variant.none: MoveGenerator.from_str("<L, R, F, B, U, D>"),
                     },
                 ),
                 max_search_depth=1,
@@ -56,11 +56,11 @@ def test_beam_search_transition_both_keeps_both_sides() -> None:
         steps=[
             BeamStep(
                 goal=Goal.solved,
-                variations=[Symmetry.none],
+                variants=[Variant.none],
                 transition=Transition(
                     search_side="both",
                     generator_map={
-                        Symmetry.none: MoveGenerator.from_str("<L, R, F, B, U, D>"),
+                        Variant.none: MoveGenerator.from_str("<L, R, F, B, U, D>"),
                     },
                 ),
                 max_search_depth=1,
@@ -90,11 +90,11 @@ def test_beam_search_single_step() -> None:
         steps=[
             BeamStep(
                 goal=Goal.solved,
-                variations=[Symmetry.none],
+                variants=[Variant.none],
                 transition=Transition(
                     search_side="prev",
                     generator_map={
-                        Symmetry.none: MoveGenerator.from_str("<L, R, F, B, U, D>"),
+                        Variant.none: MoveGenerator.from_str("<L, R, F, B, U, D>"),
                     },
                 ),
                 max_search_depth=3,
@@ -137,10 +137,10 @@ def test_multi_goal_step_on_solved_cube() -> None:
         steps=[
             BeamStep(
                 goal=Goal.eo,
-                variations=[Symmetry.fb, Symmetry.lr],
+                variants=[Variant.fb, Variant.lr],
                 transition=Transition(
                     generator_map={
-                        Symmetry.none: MoveGenerator.from_str("<L, R, F, B, U, D>"),
+                        Variant.none: MoveGenerator.from_str("<L, R, F, B, U, D>"),
                     },
                 ),
                 max_search_depth=4,
@@ -148,11 +148,11 @@ def test_multi_goal_step_on_solved_cube() -> None:
             ),
             BeamStep(
                 goal=Goal.solved,
-                variations=[Symmetry.none],
+                variants=[Variant.none],
                 transition=Transition(
                     generator_map={
-                        Symmetry.fb: MoveGenerator.from_str("<L, R, F, B, U, D>"),
-                        Symmetry.lr: MoveGenerator.from_str("<L, R, F, B, U, D>"),
+                        Variant.fb: MoveGenerator.from_str("<L, R, F, B, U, D>"),
+                        Variant.lr: MoveGenerator.from_str("<L, R, F, B, U, D>"),
                     },
                 ),
                 max_search_depth=4,
@@ -180,10 +180,10 @@ def test_prev_goal_contained_allows_matching_transition() -> None:
         steps=[
             BeamStep(
                 goal=Goal.eo,
-                variations=[Symmetry.fb],
+                variants=[Variant.fb],
                 transition=Transition(
                     generator_map={
-                        Symmetry.none: MoveGenerator.from_str("<L, R, F, B, U, D>"),
+                        Variant.none: MoveGenerator.from_str("<L, R, F, B, U, D>"),
                     },
                 ),
                 min_search_depth=0,
@@ -192,11 +192,11 @@ def test_prev_goal_contained_allows_matching_transition() -> None:
             ),
             BeamStep(
                 goal=Goal.dr,
-                variations=[Symmetry.ud],
+                variants=[Variant.ud],
                 transition=Transition(
                     search_side="prev",
                     generator_map={
-                        Symmetry.fb: MoveGenerator.from_str("<L, R, F, B, U, D>"),
+                        Variant.fb: MoveGenerator.from_str("<L, R, F, B, U, D>"),
                     },
                     check_contained=True,
                 ),
@@ -227,10 +227,10 @@ def test_prev_goal_contained_rejects_non_matching_transition() -> None:
         steps=[
             BeamStep(
                 goal=Goal.eo,
-                variations=[Symmetry.fb],
+                variants=[Variant.fb],
                 transition=Transition(
                     generator_map={
-                        Symmetry.none: MoveGenerator.from_str("<L, R, F, B, U, D>"),
+                        Variant.none: MoveGenerator.from_str("<L, R, F, B, U, D>"),
                     },
                 ),
                 min_search_depth=0,
@@ -239,11 +239,11 @@ def test_prev_goal_contained_rejects_non_matching_transition() -> None:
             ),
             BeamStep(
                 goal=Goal.dr,
-                variations=[Symmetry.fb],
+                variants=[Variant.fb],
                 transition=Transition(
                     search_side="prev",
                     generator_map={
-                        Symmetry.fb: MoveGenerator.from_str("<L, R, F, B, U, D>"),
+                        Variant.fb: MoveGenerator.from_str("<L, R, F, B, U, D>"),
                     },
                     check_contained=True,
                 ),
@@ -273,10 +273,10 @@ def test_htr_step_uses_solution_validator() -> None:
         steps=[
             BeamStep(
                 goal=Goal.htr,
-                variations=[Symmetry.none],
+                variants=[Variant.none],
                 transition=Transition(
                     generator_map={
-                        Symmetry.none: MoveGenerator.from_str("<L, R, F, B, U, D>"),
+                        Variant.none: MoveGenerator.from_str("<L, R, F, B, U, D>"),
                     },
                 ),
                 min_search_depth=0,
@@ -285,10 +285,10 @@ def test_htr_step_uses_solution_validator() -> None:
             ),
             BeamStep(
                 goal=Goal.solved,
-                variations=[Symmetry.none],
+                variants=[Variant.none],
                 transition=Transition(
                     generator_map={
-                        Symmetry.none: MoveGenerator.from_str("<L, R, F, B, U, D>"),
+                        Variant.none: MoveGenerator.from_str("<L, R, F, B, U, D>"),
                     },
                 ),
                 min_search_depth=0,
@@ -300,8 +300,8 @@ def test_htr_step_uses_solution_validator() -> None:
     move_meta = MoveMeta.from_cube_size(3)
 
     contexts = build_step_contexts(plan=plan, move_meta=move_meta)
-    htr_contexts = contexts[0].contexts_for_prev_variation(prev_symmetry=Symmetry.none)
-    solved_contexts = contexts[1].contexts_for_prev_variation(prev_symmetry=Symmetry.none)
+    htr_contexts = contexts[0].contexts_for_prev_variant(prev_variant=Variant.none)
+    solved_contexts = contexts[1].contexts_for_prev_variant(prev_variant=Variant.none)
 
     assert len(htr_contexts) == 1
     assert len(solved_contexts) == 1

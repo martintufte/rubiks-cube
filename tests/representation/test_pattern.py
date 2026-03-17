@@ -9,10 +9,10 @@ import pytest
 from rubiks_cube.autotagger.pattern import Pattern
 from rubiks_cube.autotagger.pattern import get_patterns
 from rubiks_cube.configuration.enumeration import Goal
-from rubiks_cube.configuration.enumeration import Symmetry
+from rubiks_cube.configuration.enumeration import Variant
 from rubiks_cube.move.meta import MoveMeta
 from rubiks_cube.move.sequence import MoveSequence
-from rubiks_cube.representation.pattern import generate_pattern_symmetries_variations
+from rubiks_cube.representation.pattern import generate_pattern_variants
 from rubiks_cube.representation.pattern import merge_patterns
 from rubiks_cube.representation.pattern import pattern_combinations
 from rubiks_cube.representation.pattern import pattern_implies
@@ -121,7 +121,7 @@ class TestPatternCombinations:
         pattern = self.patterns.get(Goal.solved)
         assert pattern is not None
         n_combinations = pattern_combinations(
-            pattern=pattern.variations[Symmetry.none], move_meta=self.move_meta
+            pattern=pattern.variants[Variant.none], move_meta=self.move_meta
         )
         assert n_combinations == 1
 
@@ -129,7 +129,7 @@ class TestPatternCombinations:
         pattern = self.patterns.get(Goal.none)
         assert pattern is not None
         n_combinations = pattern_combinations(
-            pattern=pattern.variations[Symmetry.none], move_meta=self.move_meta
+            pattern=pattern.variants[Variant.none], move_meta=self.move_meta
         )
         assert n_combinations == factorial(8) * 3**7 * factorial(12) * 2**11 / 2
 
@@ -137,7 +137,7 @@ class TestPatternCombinations:
         pattern = self.patterns.get(Goal.eo)
         assert pattern is not None
         n_combinations = pattern_combinations(
-            pattern=pattern.variations[Symmetry.fb], move_meta=self.move_meta
+            pattern=pattern.variants[Variant.fb], move_meta=self.move_meta
         )
         assert n_combinations == factorial(8) * 3**7 * factorial(12) / 2
 
@@ -145,7 +145,7 @@ class TestPatternCombinations:
         pattern = self.patterns.get(Goal.dr)
         assert pattern is not None
         n_combinations = pattern_combinations(
-            pattern=pattern.variations[Symmetry.ud], move_meta=self.move_meta
+            pattern=pattern.variants[Variant.ud], move_meta=self.move_meta
         )
         assert n_combinations == factorial(8) * factorial(8) * factorial(4) / 2
 
@@ -153,7 +153,7 @@ class TestPatternCombinations:
         pattern = self.patterns.get(Goal.cross)
         assert pattern is not None
         n_combinations = pattern_combinations(
-            pattern=pattern.variations[Symmetry.down], move_meta=self.move_meta
+            pattern=pattern.variants[Variant.down], move_meta=self.move_meta
         )
         assert n_combinations == factorial(8) * 3**7 * factorial(8) * 2**7 / 2
 
@@ -163,14 +163,14 @@ class TestGeneratePatternsVariations:
         move_meta = MoveMeta.from_cube_size(3)
         pattern = Pattern.from_settings(
             move_meta=move_meta,
-            symmetry=Symmetry.down,
+            variant=Variant.down,
             solved_sequence=MoveSequence.from_str("R L U2 R2 L2 U2 R L U"),
         )
 
-        variations = generate_pattern_symmetries_variations(
-            pattern=pattern.variations[Symmetry.down],
-            symmetry=Symmetry.down,
+        variants = generate_pattern_variants(
+            pattern=pattern.variants[Variant.down],
+            initial_variant=Variant.down,
             move_meta=move_meta,
         )
 
-        assert len(variations) == 6
+        assert len(variants) == 6

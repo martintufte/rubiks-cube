@@ -22,7 +22,7 @@ from rubiks_cube.configuration.enumeration import Goal
 from rubiks_cube.configuration.enumeration import Metric
 from rubiks_cube.configuration.enumeration import SolveStrategy
 from rubiks_cube.configuration.enumeration import Status
-from rubiks_cube.configuration.enumeration import Symmetry
+from rubiks_cube.configuration.enumeration import Variant
 from rubiks_cube.graphics import plot_permutation
 from rubiks_cube.move.generator import MoveGenerator
 from rubiks_cube.move.meta import MoveMeta
@@ -319,14 +319,14 @@ def app(
                 key="max_depth",
             )
 
-        variations = [symmetry.value for symmetry in autotagger.patterns[goal].variations]
+        variants = [variant.value for variant in autotagger.patterns[goal].variants]
 
         second_row = st.columns([2, 2, 1])
         with second_row[0]:
-            variation_list = st.multiselect(
-                label="Variations",
-                options=variations,
-                key="variations",
+            variant_list = st.multiselect(
+                label="Variants",
+                options=variants,
+                key="variants",
             )
         with second_row[1]:
             generator = st.text_input(
@@ -393,7 +393,7 @@ def app(
         # Handle solver button
         if solve_clicked:
             selected_generator = MoveGenerator.from_str(generator)
-            variations = [Symmetry(variation) for variation in variation_list]
+            variants = [Variant(variant) for variant in variant_list]
 
             with st.spinner("Searching for solutions.."):
                 search_summary = solve_pattern(
@@ -401,7 +401,7 @@ def app(
                     move_meta=move_meta,
                     generator=selected_generator,
                     goal=goal,
-                    variations=variations,
+                    variants=variants,
                     max_search_depth=max_search_depth,
                     max_solutions=max_solutions,
                     solve_strategy=solve_strategy,

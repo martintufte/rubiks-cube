@@ -128,7 +128,7 @@ class Goal(Enum):
 
 
 @unique
-class Symmetry(Enum):
+class Variant(Enum):
     none = "none"
     # Face
     left = "left"
