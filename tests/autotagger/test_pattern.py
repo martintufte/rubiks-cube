@@ -75,7 +75,7 @@ class TestPatternMatch:
         pattern = get_identity_pattern(cube_size=3)
         pattern = Pattern(variants={Variant.none: pattern})
         permutation = get_identity_permutation(cube_size=3)
-        assert pattern.match(permutation)
+        assert pattern.match(permutation) is not None
 
     def test_no_match_scrambled_cube(self) -> None:
         """Test that solved pattern doesn't match scrambled cube."""
@@ -83,7 +83,7 @@ class TestPatternMatch:
         pattern = get_identity_pattern(cube_size=3)
         pattern = Pattern(variants={Variant.none: pattern})
         permutation = get_rubiks_cube_permutation(MoveSequence.from_str("U"), move_meta)
-        assert not pattern.match(permutation)
+        assert pattern.match(permutation) is None
 
     def test_match_with_multiple_patterns(self) -> None:
         """Test matching with multiple patterns."""
@@ -93,7 +93,7 @@ class TestPatternMatch:
 
         # Solved cube should match first pattern
         permutation = get_identity_permutation(cube_size=3)
-        assert pattern.match(permutation)
+        assert pattern.match(permutation) is not None
 
 
 class TestPatternProperties:
@@ -182,7 +182,7 @@ class TestPatternEdgeCases:
         pattern = Pattern(variants={})
         permutation = get_rubiks_cube_permutation(MoveSequence(), move_meta=self.move_meta)
         # Empty pattern should not match anything
-        assert not pattern.match(permutation)
+        assert pattern.match(permutation) is None
 
     def test_pattern_entropy_with_single_pattern(self) -> None:
         """Test entropy calculation with single pattern."""
@@ -231,7 +231,7 @@ class TestGetPatternsExpected:
         pattern = self.patterns.get(Goal.solved)
         assert pattern is not None
         permutation = get_rubiks_cube_permutation(MoveSequence(), move_meta=self.move_meta)
-        assert pattern.match(permutation)
+        assert pattern.match(permutation) is not None
 
     def test_pattern_does_not_match_scrambled(self) -> None:
         """Test that solved pattern doesn't match scrambled cube."""

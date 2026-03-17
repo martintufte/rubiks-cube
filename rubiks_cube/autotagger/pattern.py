@@ -142,12 +142,13 @@ class Pattern:
     def __len__(self) -> int:
         return len(self.variants)
 
-    def match(self, permutation: CubePermutation) -> bool:
-        if any(np.array_equal(variant[permutation], variant) for variant in self.variants.values()):
-            if self.validator is not None:
-                return self.validator(permutation)
-            return True
-        return False
+    def match(self, permutation: CubePermutation) -> Variant | None:
+        for variant, pattern in self.variants.items():
+            if np.array_equal(pattern[permutation], pattern):
+                if self.validator is not None and not self.validator(permutation):
+                    return None
+                return variant
+        return None
 
     def calc_combinations(self, move_meta: MoveMeta) -> int:
         """Sum of the number of combinations for each pattern."""
@@ -260,6 +261,19 @@ def get_3x3_patterns(move_meta: MoveMeta) -> dict[Goal, Pattern]:
         pieces=[Piece.center],
         orientation_generator=MoveGenerator.from_str("<x2, z>"),
     )
+
+    # TODO: Floppy reduction does not fuse edges and corners together
+    # Symmetric edge + corner orientations
+    edge_orientation_symmetric = {
+        Goal.floppy: ("<L2, R2, U2, D2>", Variant.fb),
+    }
+    for goal, (generator, variant) in edge_orientation_symmetric.items():
+        patterns[goal] = Pattern.from_settings(
+            move_meta=move_meta,
+            variant=variant,
+            pieces=[Piece.edge, Piece.corner],
+            orientation_generator=MoveGenerator.from_str(generator),
+        )
 
     # Symmetric composite
     patterns[Goal.f2l_face] = patterns[Goal.face] & patterns[Goal.f2l]
