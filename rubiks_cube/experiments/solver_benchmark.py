@@ -227,7 +227,7 @@ def run_benchmark(
     search_problem = SearchProblem(actions=actions, pattern=cube_pattern)
     search_problem = pipeline.fit(search_problem=search_problem)
     actions = search_problem.actions
-    pattern = search_problem.pattern.astype(np.uint8)
+    pattern = search_problem.pattern
     assert search_problem.adj_matrix is not None
     adj_matrix = search_problem.adj_matrix
 

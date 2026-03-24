@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
+import numpy as np
 import pytest
 
 from rubiks_cube.configuration import DEFAULT_GENERATOR_MAP
@@ -12,6 +13,8 @@ from rubiks_cube.move.sequence import MoveSequence
 from rubiks_cube.representation.pattern import get_solved_pattern
 from rubiks_cube.solver.actions import get_actions
 from rubiks_cube.transform.action import compute_adjacency_matrix
+from rubiks_cube.transform.cast import CastDtype
+from rubiks_cube.transform.cast import get_index_dtype
 from rubiks_cube.transform.index import DisjointSubsetReorderer
 from rubiks_cube.transform.index import FilterAffected
 from rubiks_cube.transform.index import FilterIsomorphic
@@ -49,6 +52,10 @@ class TestIndexOptimizer:
         search_problem = SearchProblem(actions=actions, pattern=pattern)
 
         search_problem = default_pipeline.fit(search_problem=search_problem)
+        transformed_size = next(iter(search_problem.actions.values())).size
+        expected_dtype = get_index_dtype(transformed_size)
+        assert search_problem.pattern.dtype == np.uint8
+        assert all(perm.dtype == expected_dtype for perm in search_problem.actions.values())
 
         for transform in default_pipeline.transforms:
             if isinstance(transform, FilterRepresentative):
@@ -63,6 +70,8 @@ class TestIndexOptimizer:
             elif isinstance(transform, DisjointSubsetReorderer):
                 assert transform.subset_sizes is not None
                 assert transform.subset_sizes == subset_sizes
+            elif isinstance(transform, CastDtype):
+                assert transform.permutation_dtype == expected_dtype
 
     @pytest.mark.parametrize(
         "generator_str,representative_size,affected_size,isomorphic_size,subset_sizes",
@@ -144,3 +153,16 @@ def test_compute_adjacency_matrix_handles_empty_permutations() -> None:
     adj_matrix = compute_adjacency_matrix(((), ()), 0)
     assert adj_matrix.shape == (2, 2)
     assert not adj_matrix.any()
+
+
+@pytest.mark.parametrize(
+    "size,expected_dtype",
+    [
+        (256, np.dtype(np.uint8)),
+        (257, np.dtype(np.uint16)),
+        (65536, np.dtype(np.uint16)),
+        (65537, np.dtype(np.uint32)),
+    ],
+)
+def test_get_index_dtype(size: int, expected_dtype: np.dtype[np.unsignedinteger]) -> None:
+    assert get_index_dtype(size) == expected_dtype

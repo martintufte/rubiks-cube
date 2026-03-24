@@ -7,7 +7,6 @@ from typing import TYPE_CHECKING
 from typing import Self
 
 import attrs
-import numpy as np
 
 from rubiks_cube.configuration.enumeration import SearchSide
 from rubiks_cube.configuration.enumeration import Status
@@ -60,8 +59,7 @@ class BidirectionalSolver(PermutationSolver):
         search_problem = SearchProblem(actions=actions, pattern=pattern)
         search_problem = pipeline.fit(search_problem)
 
-        # Cast pattern to uint8 for more efficient computation and memory
-        pattern = search_problem.pattern.astype(np.uint8)
+        pattern = search_problem.pattern
         actions = search_problem.actions
         if search_problem.adj_matrix is None:
             raise ValueError("Pipeline did not set adjacency matrix on search problem.")

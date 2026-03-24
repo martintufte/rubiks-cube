@@ -7,6 +7,7 @@ import attrs
 
 from rubiks_cube.configuration.regex import canonical_key
 from rubiks_cube.transform.action import ActionOptimizer
+from rubiks_cube.transform.cast import CastDtype
 from rubiks_cube.transform.index import DisjointSubsetReorderer
 from rubiks_cube.transform.index import FilterAffected
 from rubiks_cube.transform.index import FilterIsomorphic
@@ -50,6 +51,8 @@ def create_transform_pipeline(
                 DisjointSubsetReorderer(),
             ]
         )
+
+    transforms.append(CastDtype())
 
     if key is None:
         key = canonical_key
