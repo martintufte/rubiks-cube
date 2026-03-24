@@ -16,7 +16,7 @@ from rubiks_cube.transform.interface import Transform
 
 if TYPE_CHECKING:
     from rubiks_cube.configuration.types import BoolArray
-    from rubiks_cube.configuration.types import CubePermutation
+    from rubiks_cube.configuration.types import PermutationArray
 
 
 LOGGER = logging.getLogger(__name__)
@@ -105,16 +105,16 @@ class ActionOptimizer(Transform):
 
     def fit_transform(
         self,
-        actions: dict[str, CubePermutation],
+        actions: dict[str, PermutationArray],
         debug: bool | None = None,
-    ) -> dict[str, CubePermutation]:
+    ) -> dict[str, PermutationArray]:
         """Backward-compatible fit+transform helper."""
         if debug is not None:
             self.debug = debug
         search_problem = SearchProblem(actions=actions, pattern=np.zeros(0, dtype=np.uint))
         return self.fit(search_problem).actions
 
-    def transform_permutation(self, permutation: CubePermutation) -> CubePermutation:
+    def transform_permutation(self, permutation: PermutationArray) -> PermutationArray:
         """Actions-only optimization does not alter state permutations."""
         return permutation
 

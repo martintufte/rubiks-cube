@@ -9,7 +9,7 @@ from rubiks_cube.transform.interface import SearchProblem
 from rubiks_cube.transform.interface import Transform
 
 if TYPE_CHECKING:
-    from rubiks_cube.configuration.types import CubePermutation
+    from rubiks_cube.configuration.types import PermutationArray
 
 
 def get_index_dtype(size: int) -> np.dtype[np.unsignedinteger]:
@@ -39,7 +39,7 @@ class CastDtype(Transform):
         }
         return search_problem
 
-    def transform_permutation(self, permutation: CubePermutation) -> CubePermutation:
+    def transform_permutation(self, permutation: PermutationArray) -> PermutationArray:
         if self.permutation_dtype is None:
             raise ValueError("CastDtype must be fitted before transforming permutations.")
         return permutation.astype(self.permutation_dtype, copy=False)

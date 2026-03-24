@@ -8,14 +8,14 @@ import attrs
 
 if TYPE_CHECKING:
     from rubiks_cube.configuration.types import BoolArray
-    from rubiks_cube.configuration.types import CubePattern
-    from rubiks_cube.configuration.types import CubePermutation
+    from rubiks_cube.configuration.types import PatternArray
+    from rubiks_cube.configuration.types import PermutationArray
 
 
 @attrs.mutable
 class SearchProblem:
-    actions: dict[str, CubePermutation]
-    pattern: CubePattern
+    actions: dict[str, PermutationArray]
+    pattern: PatternArray
     adj_matrix: BoolArray | None = None
 
 
@@ -27,5 +27,5 @@ class Transform(ABC):
         """Fit self to the state."""
 
     @abstractmethod
-    def transform_permutation(self, permutation: CubePermutation) -> CubePermutation:
+    def transform_permutation(self, permutation: PermutationArray) -> PermutationArray:
         """Transform the permutation."""

@@ -24,7 +24,7 @@ from rubiks_cube.transform.pipeline import Pipeline
 from rubiks_cube.transform.pipeline import create_transform_pipeline
 
 if TYPE_CHECKING:
-    from rubiks_cube.configuration.types import CubePermutation
+    from rubiks_cube.configuration.types import PermutationArray
 
 
 @pytest.fixture
@@ -42,7 +42,7 @@ class TestIndexOptimizer:
     def _assert_transform_sizes(
         self,
         default_pipeline: Pipeline,
-        actions: dict[str, CubePermutation],
+        actions: dict[str, PermutationArray],
         representative_size: int,
         affected_size: int,
         isomorphic_size: int,

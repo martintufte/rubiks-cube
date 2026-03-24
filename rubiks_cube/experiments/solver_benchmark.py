@@ -26,8 +26,8 @@ from rubiks_cube.transform.pipeline import create_transform_pipeline
 
 if TYPE_CHECKING:
     from rubiks_cube.configuration.types import BoolArray
-    from rubiks_cube.configuration.types import CubePattern
-    from rubiks_cube.configuration.types import CubePermutation
+    from rubiks_cube.configuration.types import PatternArray
+    from rubiks_cube.configuration.types import PermutationArray
     from rubiks_cube.configuration.types import PermutationValidator
 
 LOGGER: Final = logging.getLogger(__name__)
@@ -37,7 +37,7 @@ class AlphaSolver:
     def __init__(
         self,
         fn: Callable[
-            [CubePermutation, dict[str, CubePermutation], CubePattern, int, int, float],
+            [PermutationArray, dict[str, PermutationArray], PatternArray, int, int, float],
             list[list[str]] | None,
         ],
     ) -> None:
@@ -49,9 +49,9 @@ class BetaSolver:
         self,
         fn: Callable[
             [
-                CubePermutation,
-                dict[str, CubePermutation],
-                CubePattern,
+                PermutationArray,
+                dict[str, PermutationArray],
+                PatternArray,
                 BoolArray,
                 int,
                 int,
@@ -67,9 +67,9 @@ class BetaSolver:
 
 def verify_solution(
     solution: list[str],
-    initial_permutation: CubePermutation,
-    actions: dict[str, CubePermutation],
-    pattern: CubePattern,
+    initial_permutation: PermutationArray,
+    actions: dict[str, PermutationArray],
+    pattern: PatternArray,
 ) -> bool:
     """Verify that a solution actually solves the cube."""
     try:
@@ -96,9 +96,9 @@ def verify_solution(
 
 def benchmark_solver(
     solver: AlphaSolver | BetaSolver,
-    initial_permutation: CubePermutation,
-    actions: dict[str, CubePermutation],
-    pattern: CubePattern,
+    initial_permutation: PermutationArray,
+    actions: dict[str, PermutationArray],
+    pattern: PatternArray,
     adj_matrix: BoolArray,
     min_depth: int = 0,
     max_depth: int = 10,

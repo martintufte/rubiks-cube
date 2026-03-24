@@ -24,8 +24,8 @@ from rubiks_cube.transform.pipeline import create_transform_pipeline
 
 if TYPE_CHECKING:
     from rubiks_cube.configuration.types import BoolArray
-    from rubiks_cube.configuration.types import CubePattern
-    from rubiks_cube.configuration.types import CubePermutation
+    from rubiks_cube.configuration.types import PatternArray
+    from rubiks_cube.configuration.types import PermutationArray
     from rubiks_cube.configuration.types import PermutationValidator
     from rubiks_cube.transform.pipeline import Pipeline
 
@@ -33,16 +33,16 @@ if TYPE_CHECKING:
 @attrs.frozen
 class BidirectionalSolver(PermutationSolver):
     pipeline: Pipeline
-    actions: dict[str, CubePermutation]
-    pattern: CubePattern
+    actions: dict[str, PermutationArray]
+    pattern: PatternArray
     adj_matrix: BoolArray
     validator: PermutationValidator | None
 
     @classmethod
     def from_actions_and_pattern(
         cls,
-        actions: dict[str, CubePermutation],
-        pattern: CubePattern,
+        actions: dict[str, PermutationArray],
+        pattern: PatternArray,
         validator: PermutationValidator | None = None,
         optimize_indices: bool = True,
         debug: bool = False,
@@ -75,7 +75,7 @@ class BidirectionalSolver(PermutationSolver):
 
     def search(
         self,
-        permutation: CubePermutation,
+        permutation: PermutationArray,
         max_solutions: int,
         min_search_depth: int,
         max_search_depth: int,
@@ -123,7 +123,7 @@ class BidirectionalSolver(PermutationSolver):
 
     def search_many(
         self,
-        permutations: list[CubePermutation],
+        permutations: list[PermutationArray],
         max_solutions_per_permutation: int,
         min_search_depth: int,
         max_search_depth: int,

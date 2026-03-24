@@ -14,9 +14,9 @@ from rubiks_cube.transform.interface import SearchProblem
 from rubiks_cube.transform.interface import Transform
 
 if TYPE_CHECKING:
-    from rubiks_cube.configuration.types import CubeMask
-    from rubiks_cube.configuration.types import CubePattern
-    from rubiks_cube.configuration.types import CubePermutation
+    from rubiks_cube.configuration.types import MaskArray
+    from rubiks_cube.configuration.types import PatternArray
+    from rubiks_cube.configuration.types import PermutationArray
 
 
 LOGGER = logging.getLogger(__name__)
@@ -24,8 +24,8 @@ LOGGER = logging.getLogger(__name__)
 
 @attrs.mutable
 class FilterRepresentative(Transform):
-    representative_identity: CubePattern | None = None
-    representative_mask: CubeMask | None = None
+    representative_identity: PatternArray | None = None
+    representative_mask: MaskArray | None = None
 
     def fit(self, search_problem: SearchProblem) -> SearchProblem:
         indistinguishable = find_indistinguishable_pattern(
@@ -46,7 +46,7 @@ class FilterRepresentative(Transform):
         search_problem.pattern = search_problem.pattern[self.representative_mask]
         return search_problem
 
-    def transform_permutation(self, permutation: CubePermutation) -> CubePermutation:
+    def transform_permutation(self, permutation: PermutationArray) -> PermutationArray:
         assert self.representative_identity is not None
         assert self.representative_mask is not None
         return self.representative_identity[permutation][self.representative_mask]
@@ -54,21 +54,21 @@ class FilterRepresentative(Transform):
 
 @attrs.mutable
 class FilterAffected(Transform):
-    affected_mask: CubeMask | None = None
+    affected_mask: MaskArray | None = None
 
     def fit(self, search_problem: SearchProblem) -> SearchProblem:
         search_problem.actions, self.affected_mask = filter_affected_space(search_problem.actions)
         search_problem.pattern = search_problem.pattern[self.affected_mask]
         return search_problem
 
-    def transform_permutation(self, permutation: CubePermutation) -> CubePermutation:
+    def transform_permutation(self, permutation: PermutationArray) -> PermutationArray:
         assert self.affected_mask is not None
         return reindex(permutation, self.affected_mask)
 
 
 @attrs.mutable
 class FilterIsomorphic(Transform):
-    isomorphic_mask: CubeMask | None = None
+    isomorphic_mask: MaskArray | None = None
 
     def fit(self, search_problem: SearchProblem) -> SearchProblem:
         search_problem.actions, self.isomorphic_mask = filter_isomorphic_subsets(
@@ -77,7 +77,7 @@ class FilterIsomorphic(Transform):
         search_problem.pattern = search_problem.pattern[self.isomorphic_mask]
         return search_problem
 
-    def transform_permutation(self, permutation: CubePermutation) -> CubePermutation:
+    def transform_permutation(self, permutation: PermutationArray) -> PermutationArray:
         assert self.isomorphic_mask is not None
         return reindex(permutation, self.isomorphic_mask)
 
@@ -85,8 +85,8 @@ class FilterIsomorphic(Transform):
 @attrs.mutable
 class DisjointSubsetReorderer(Transform):
     subset_sizes: list[int] | None = None
-    subset_reorder: CubePermutation | None = None
-    subset_reorder_inv: CubePermutation | None = None
+    subset_reorder: PermutationArray | None = None
+    subset_reorder_inv: PermutationArray | None = None
 
     def fit(self, search_problem: SearchProblem) -> SearchProblem:
         (
@@ -98,18 +98,18 @@ class DisjointSubsetReorderer(Transform):
         ) = reorder_by_disjoint_subsets(search_problem.actions, search_problem.pattern)
         return search_problem
 
-    def transform_permutation(self, permutation: CubePermutation) -> CubePermutation:
+    def transform_permutation(self, permutation: PermutationArray) -> PermutationArray:
         assert self.subset_reorder is not None
         assert self.subset_reorder_inv is not None
         return self.subset_reorder_inv[permutation[self.subset_reorder]]
 
 
 def find_indistinguishable_pattern(
-    actions: dict[str, CubePermutation],
-    pattern: CubePattern,
-) -> CubePattern:
+    actions: dict[str, PermutationArray],
+    pattern: PatternArray,
+) -> PatternArray:
     """Find indistinguishable pattern from the actions and pattern."""
-    indistinguishable: CubePattern = pattern.copy()
+    indistinguishable: PatternArray = pattern.copy()
     while True:
         new = merge_patterns(
             [indistinguishable, *(indistinguishable[perm] for perm in actions.values())]
@@ -120,8 +120,8 @@ def find_indistinguishable_pattern(
 
 
 def filter_affected_space(
-    actions: dict[str, CubePermutation],
-) -> tuple[dict[str, CubePermutation], CubeMask]:
+    actions: dict[str, PermutationArray],
+) -> tuple[dict[str, PermutationArray], MaskArray]:
     """Filter indices that are not affected by the action space."""
     size = next(iter(actions.values())).size
 
@@ -140,7 +140,7 @@ def filter_affected_space(
 
 
 def find_disjoint_subsets(
-    actions: dict[str, CubePermutation],
+    actions: dict[str, PermutationArray],
 ) -> npt.NDArray[np.int_]:
     """Find disjoint subsets of indices using union-find on the action permutations."""
     size = next(iter(actions.values())).size
@@ -153,8 +153,8 @@ def find_disjoint_subsets(
 
 
 def filter_isomorphic_subsets(
-    actions: dict[str, CubePermutation],
-) -> tuple[dict[str, CubePermutation], CubeMask]:
+    actions: dict[str, PermutationArray],
+) -> tuple[dict[str, PermutationArray], MaskArray]:
     """Remove isomorphic disjoint subsets."""
     size = next(iter(actions.values())).size
     subset_labels = find_disjoint_subsets(actions)
@@ -198,9 +198,11 @@ def filter_isomorphic_subsets(
 
 
 def reorder_by_disjoint_subsets(
-    actions: dict[str, CubePermutation],
-    pattern: CubePattern,
-) -> tuple[dict[str, CubePermutation], CubePattern, list[int], CubePermutation, CubePermutation]:
+    actions: dict[str, PermutationArray],
+    pattern: PatternArray,
+) -> tuple[
+    dict[str, PermutationArray], PatternArray, list[int], PermutationArray, PermutationArray
+]:
     """Reorder indices so that disjoint subsets are contiguous, sorted by subset size."""
     size = next(iter(actions.values())).size
     subset_labels = find_disjoint_subsets(actions)
@@ -231,7 +233,7 @@ def reorder_by_disjoint_subsets(
 def has_consistent_bijection(
     subset_idxs: npt.NDArray[np.int_],
     other_subset_idxs: npt.NDArray[np.int_],
-    actions: dict[str, CubePermutation],
+    actions: dict[str, PermutationArray],
 ) -> bool:
     """Try creating a consistent bijection between two groups of indices."""
     for other_idx in other_subset_idxs:

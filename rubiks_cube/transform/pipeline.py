@@ -15,7 +15,7 @@ from rubiks_cube.transform.index import FilterRepresentative
 from rubiks_cube.transform.interface import Transform
 
 if TYPE_CHECKING:
-    from rubiks_cube.configuration.types import CubePermutation
+    from rubiks_cube.configuration.types import PermutationArray
     from rubiks_cube.transform.interface import SearchProblem
 
 
@@ -28,7 +28,7 @@ class Pipeline(Transform):
             search_problem = transform.fit(search_problem)
         return search_problem
 
-    def transform_permutation(self, permutation: CubePermutation) -> CubePermutation:
+    def transform_permutation(self, permutation: PermutationArray) -> PermutationArray:
         for transform in self.transforms:
             permutation = transform.transform_permutation(permutation)
         return permutation
