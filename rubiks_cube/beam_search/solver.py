@@ -157,7 +157,6 @@ def build_step_contexts(plan: BeamPlan, move_meta: MoveMeta) -> list[StepOptions
                 solver = BidirectionalSolver.from_actions_and_pattern(
                     actions=actions,
                     pattern=cube_pattern,
-                    cube_size=move_meta.cube_size,
                     validator=pattern.validator,
                     optimize_indices=True,
                     debug=False,
