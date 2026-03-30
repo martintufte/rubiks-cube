@@ -147,16 +147,14 @@ class MoveMeta:
     @cached_property
     def pieces(self) -> list[set[int]]:
         """A 'piece' is a set of indices where all of them are either affected
-        or stay unaffected by every permutation.
-
-        TODO: Check that a piece 'fixate' another piece, so 3x3 don't have 3 center pieces.
-        """
+        or stay unaffected by every base permutation."""
         piece_groups: list[set[int]] = [set(range(self.size))]
 
         # Iteratively split the group into smaller groups
         identity = np.arange(self.size, dtype=self.dtype)
 
-        for permutation in self.permutations.values():
+        for move in self.base_moves - set(self.substitutions):
+            permutation = self.permutations[move]
             affected = {idx for idx, value in enumerate(identity != permutation) if value}
 
             new_piece_groups: list[set[int]] = []

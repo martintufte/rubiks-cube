@@ -19,6 +19,7 @@ from rubiks_cube.representation.symmetries import find_variant_group
 if TYPE_CHECKING:
     from collections.abc import Sequence
 
+    from rubiks_cube.configuration.enumeration import Variant
     from rubiks_cube.configuration.types import MaskArray
     from rubiks_cube.configuration.types import PatternArray
     from rubiks_cube.move.generator import MoveGenerator
@@ -194,10 +195,13 @@ def merge_patterns(patterns: Sequence[PatternArray]) -> PatternArray:
 
 
 def pattern_combinations(pattern: PatternArray, move_meta: MoveMeta) -> int:
-    """Calculate the combinations of a pattern. Assumes that the pattern is rotated.
+    """Calculate the number of combinations of a pattern using automatic piece discovery.
+
+    Uses orbit analysis and the pieces property to identify permutable groups
+    and their orientations, then calculates how many ways the pattern can be achieved.
 
     Args:
-        pattern (PatternArray): Cube pattern.
+        pattern (PatternArray): Pattern array.
         move_meta (MoveMeta): Meta information about moves.
 
     Returns:
