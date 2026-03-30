@@ -53,7 +53,7 @@ class TestMoveMeta:
 
     def test_pieces(self) -> None:
         meta = MoveMeta.from_cube_size(3)
-        assert len(meta.pieces) == 21
+        assert len(meta.pieces) == 20
         corners = [piece for piece in meta.pieces if len(piece) == 3]
         edges = [piece for piece in meta.pieces if len(piece) == 2]
         assert len(corners) == 8

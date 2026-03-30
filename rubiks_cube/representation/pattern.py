@@ -13,7 +13,6 @@ from rubiks_cube.configuration.enumeration import Piece
 from rubiks_cube.configuration.enumeration import Variant
 from rubiks_cube.move.sequence import MoveSequence
 from rubiks_cube.representation import get_rubiks_cube_permutation
-from rubiks_cube.representation.mask import piece_masks
 from rubiks_cube.representation.symmetries import find_variant_group
 
 if TYPE_CHECKING:
@@ -229,10 +228,20 @@ def piece_combinations(pattern: PatternArray, piece: Piece, move_meta: MoveMeta)
     if cube_size == 1 or (cube_size == 2 and piece == Piece.edge):
         return 1
 
+    if piece == Piece.corner:
+        piece_size = 3
+    elif piece == Piece.edge:
+        piece_size = 2
+    else:
+        raise NotImplementedError("This piece is not defined")
+
     combinations = 1
     count_unique: dict[tuple[int, ...], int] = {}
-    for mask in piece_masks(piece, cube_size=cube_size):
-        cubies = pattern[mask]
+    for indices in move_meta.pieces:
+        if len(indices) != piece_size:
+            continue
+
+        cubies = pattern[list(indices)]
         cubies.sort()
         cubies_tuple = tuple(cubies)
         if cubies_tuple not in count_unique:
