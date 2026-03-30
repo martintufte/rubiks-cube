@@ -39,7 +39,7 @@ def create_permutations(cube_size: int) -> dict[str, PermutationArray]:
     """Return a dictionaty over all legal turns.
 
     Args:
-        cube_size (int, optional): Size of the cube. Defaults to CUBE_SIZE.
+        cube_size (int): Size of the cube. Defaults to CUBE_SIZE.
 
     Returns:
         dict[str, PermutationArray]: Dictionary of all permutations.
