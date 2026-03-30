@@ -27,8 +27,8 @@ if TYPE_CHECKING:
 LOGGER: Final = logging.getLogger(__name__)
 
 
-def get_empty_pattern(cube_size: int) -> PatternArray:
-    return np.zeros(6 * cube_size**2, dtype=int)
+def get_empty_pattern(size: int) -> PatternArray:
+    return np.zeros(size, dtype=int)
 
 
 def get_identity_pattern(size: int) -> PatternArray:

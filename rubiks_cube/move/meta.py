@@ -114,7 +114,7 @@ CANONICAL_ROTATION_SEQUENCES: Final[dict[tuple[int, int], list[str]]] = {
 # TODO: Implement the full Cayley table for rotation group
 def _canonicalize_rotations(rotations: Sequence[str]) -> list[str]:
     """Get the canonical rotation representation from the sequence."""
-    state = get_identity_permutation(cube_size=1)
+    state = get_identity_permutation(size=6)
     permutations = create_permutations(cube_size=1)
 
     for rotation in rotations:

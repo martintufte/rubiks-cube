@@ -19,14 +19,14 @@ if TYPE_CHECKING:
     from rubiks_cube.configuration.types import MaskArray
 
 
-def get_zeros_mask(cube_size: int) -> MaskArray:
-    """Return the zeros mask of the cube."""
-    return np.zeros(6 * cube_size**2, dtype=bool)
+def get_zeros_mask(size: int) -> MaskArray:
+    """Return the zeros mask for the given size."""
+    return np.zeros(size, dtype=bool)
 
 
-def get_ones_mask(cube_size: int) -> MaskArray:
-    """Return the ones mask of the cube."""
-    return np.ones(6 * cube_size**2, dtype=bool)
+def get_ones_mask(size: int) -> MaskArray:
+    """Return the ones mask for the given size."""
+    return np.ones(size, dtype=bool)
 
 
 def combine_masks(masks: Sequence[MaskArray]) -> MaskArray:
@@ -87,7 +87,7 @@ def get_pieces_mask(pieces: Sequence[Piece], move_meta: MoveMeta) -> MaskArray:
     """
     fixed_piece_mask_map = get_fixed_piece_mask_map(move_meta.cube_size)
 
-    mask = get_zeros_mask(cube_size=move_meta.cube_size)
+    mask = get_zeros_mask(size=move_meta.size)
     for piece in pieces:
         piece_mask = fixed_piece_mask_map[piece]
         mask |= piece_mask
@@ -113,8 +113,8 @@ def get_facelet_mask(
     """
     if cube_size == 1:
         if piece is Piece.corner:
-            return get_ones_mask(cube_size=cube_size)
-        return get_zeros_mask(cube_size=cube_size)
+            return get_ones_mask(size=6 * cube_size**2)
+        return get_zeros_mask(size=6 * cube_size**2)
 
     if piece is Piece.corner:
         return get_coord_mask((0, 0), cube_size=cube_size)
@@ -140,9 +140,9 @@ def get_coord_mask(coord: tuple[int, int], cube_size: int) -> MaskArray:
 
     # The whole cube is a single piece
     if cube_size == 1:
-        return get_ones_mask(cube_size=cube_size)
+        return get_ones_mask(size=6 * cube_size**2)
 
-    mask = get_zeros_mask(cube_size=cube_size)
+    mask = get_zeros_mask(size=6 * cube_size**2)
 
     # Set the ULB corner
     if coord == (0, 0):
