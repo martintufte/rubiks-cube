@@ -19,6 +19,8 @@ from rubiks_cube.move.sequence import measure
 from rubiks_cube.move.steps import MoveSteps
 from rubiks_cube.representation import get_rubiks_cube_permutation
 from rubiks_cube.representation.pattern import pattern_implies
+from rubiks_cube.representation.symmetries import find_variant_group
+from rubiks_cube.representation.utils import conjugate
 from rubiks_cube.solver.actions import get_actions
 from rubiks_cube.solver.bidirectional import BidirectionalSolver
 
@@ -30,6 +32,32 @@ if TYPE_CHECKING:
     from rubiks_cube.move.generator import MoveGenerator
 
 LOGGER = logging.getLogger(__name__)
+
+
+def _convert_solution_from_canonical(
+    solution: MoveSequence,
+    r_v_moves: list[str],
+    conjugation_map: dict[tuple[str, str], str],
+    inverse_map: dict[str, str],
+) -> MoveSequence:
+    """Convert a solution from the canonical variant frame back to the original variant frame.
+
+    Applies conjugation_map[(move, r^-1)] for each rotation r in r_v_moves,
+    the inverse of the canonical frame transformation.
+    """
+
+    def convert_move(move: str) -> str:
+        converted = move
+        for rot in r_v_moves:
+            inv_rot = inverse_map[rot]
+            if (converted, inv_rot) in conjugation_map:
+                converted = conjugation_map[(converted, inv_rot)]
+        return converted
+
+    return MoveSequence(
+        normal=[convert_move(move) for move in solution.normal],
+        inverse=[convert_move(move) for move in solution.inverse],
+    )
 
 
 @frozen
@@ -75,6 +103,9 @@ def search_sides(candidate: BeamCandidate, step: BeamStep) -> tuple[SearchSide, 
 class StepContext:
     goal: Goal
     variant: Variant
+    canonical_variant: Variant
+    r_v_moves: list[str]
+    r_v_perm: PermutationArray | None
     step: BeamStep
     solver: BidirectionalSolver
     pattern: PatternArray
@@ -132,6 +163,30 @@ def expand_candidate(candidate: BeamCandidate, move_meta: MoveMeta) -> list[Beam
     return candidates
 
 
+def _canonical_info(
+    variant: Variant,
+    move_meta: MoveMeta,
+) -> tuple[Variant, list[str], PermutationArray | None]:
+    """Return (canonical_variant, r_v_moves, r_v_perm) for the given variant.
+
+    r_v_moves is the rotation sequence from the canonical variant to this variant.
+    r_v_perm is the pre-computed permutation for that rotation, or None if empty.
+    """
+    if variant is Variant.none:
+        return variant, [], None
+    variant_group = find_variant_group(variant)
+    canonical_variant = next(k for k, v in variant_group.items() if not v)
+    r_v_moves = variant_group[variant]
+    if r_v_moves:
+        r_v_perm = get_rubiks_cube_permutation(
+            sequence=MoveSequence(normal=r_v_moves),
+            move_meta=move_meta,
+        )
+    else:
+        r_v_perm = None
+    return canonical_variant, r_v_moves, r_v_perm
+
+
 def build_step_contexts(plan: BeamPlan, move_meta: MoveMeta) -> list[StepOptions]:
     patterns = get_patterns(cube_size=move_meta.cube_size)
     contexts: list[StepOptions] = []
@@ -151,25 +206,47 @@ def build_step_contexts(plan: BeamPlan, move_meta: MoveMeta) -> list[StepOptions
             goal_contexts: list[StepContext] = []
 
             pattern = patterns[step.goal]
-            for variant, cube_pattern in pattern.variants.items():
-                if variant not in step.variants:
+
+            # Group step variants by canonical variant so each canonical gets one solver.
+            canonical_to_variants: dict[
+                Variant, list[tuple[Variant, list[str], PermutationArray | None]]
+            ] = {}
+            for variant in step.variants:
+                if variant not in pattern.variants:
                     continue
+                canonical_variant, r_v_moves, r_v_perm = _canonical_info(variant, move_meta)
+                canonical_to_variants.setdefault(canonical_variant, []).append(
+                    (variant, r_v_moves, r_v_perm)
+                )
+
+            for canonical_variant, variant_rotations in canonical_to_variants.items():
+                canonical_pattern = pattern[canonical_variant]
                 solver = BidirectionalSolver.from_actions_and_pattern(
                     actions=actions,
-                    pattern=cube_pattern,
+                    pattern=canonical_pattern,
                     validator=pattern.validator,
                     optimize_indices=True,
                     debug=False,
                 )
-                goal_contexts.append(
-                    StepContext(
-                        goal=step.goal,
-                        variant=variant,
-                        step=step,
-                        solver=solver,
-                        pattern=cube_pattern,
+                for variant, r_v_moves, r_v_perm in variant_rotations:
+                    if r_v_moves:
+                        LOGGER.debug(
+                            f"Variant '{variant.value}' -> canonical "
+                            f"'{canonical_variant.value}' via rotation {r_v_moves}"
+                        )
+                    goal_contexts.append(
+                        StepContext(
+                            goal=step.goal,
+                            variant=variant,
+                            canonical_variant=canonical_variant,
+                            r_v_moves=r_v_moves,
+                            r_v_perm=r_v_perm,
+                            step=step,
+                            solver=solver,
+                            pattern=canonical_pattern,
+                        )
                     )
-                )
+
             contexts_by_generator[generator_key] = goal_contexts
             if len(goal_contexts) == 0:
                 continue
@@ -293,9 +370,15 @@ def beam_search(
                     if prev_variant not in allowed_prev_variants:
                         continue
 
+                # Rotate permutations to the canonical variant frame before searching.
+                if context.r_v_perm is not None:
+                    canonical_permutations = [conjugate(p, context.r_v_perm) for p in permutations]
+                else:
+                    canonical_permutations = permutations
+
                 for side in search_sides(candidate=candidate, step=step_options.step):
                     search_summary = context.solver.search_many(
-                        permutations=permutations,
+                        permutations=canonical_permutations,
                         max_solutions_per_permutation=step_options.step.max_solutions,
                         min_search_depth=step_options.step.min_search_depth,
                         max_search_depth=step_options.step.max_search_depth,
@@ -314,6 +397,15 @@ def beam_search(
                     for rooted_solution in rooted_solutions:
                         alternative = candidate_alternatives[rooted_solution.permutation_index]
                         solution = rooted_solution.sequence
+
+                        # Convert solution from canonical frame back to variant frame.
+                        if context.r_v_moves:
+                            solution = _convert_solution_from_canonical(
+                                solution=solution,
+                                r_v_moves=context.r_v_moves,
+                                conjugation_map=move_meta.conjugation_map,
+                                inverse_map=move_meta.inverse_map,
+                            )
 
                         new_permutation = get_rubiks_cube_permutation(
                             sequence=solution,

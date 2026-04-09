@@ -65,9 +65,10 @@ class FilterAffected(Transform):
 @attrs.mutable
 class FilterIsomorphic(Transform):
     isomorphic_mask: MaskArray | None = None
+    full_remap: PermutationArray | None = None
 
     def fit(self, search_problem: SearchProblem) -> SearchProblem:
-        search_problem.actions, self.isomorphic_mask = filter_isomorphic_subsets(
+        search_problem.actions, self.isomorphic_mask, self.full_remap = filter_isomorphic_subsets(
             search_problem.actions
         )
         search_problem.pattern = search_problem.pattern[self.isomorphic_mask]
@@ -75,7 +76,10 @@ class FilterIsomorphic(Transform):
 
     def transform_permutation(self, permutation: PermutationArray) -> PermutationArray:
         assert self.isomorphic_mask is not None
-        return reindex(permutation, self.isomorphic_mask)
+        assert self.full_remap is not None
+        # Use full_remap so that values from removed isomorphic positions are correctly
+        # mapped to their kept partner's output index, not left as out-of-range values.
+        return self.full_remap[permutation[self.isomorphic_mask]]
 
 
 @attrs.mutable
@@ -150,14 +154,24 @@ def find_disjoint_subsets(
 
 def filter_isomorphic_subsets(
     actions: dict[str, PermutationArray],
-) -> tuple[dict[str, PermutationArray], MaskArray]:
-    """Remove isomorphic disjoint subsets."""
+) -> tuple[dict[str, PermutationArray], MaskArray, PermutationArray]:
+    """Remove isomorphic disjoint subsets.
+
+    Returns the reindexed actions, the boolean mask of kept positions, and a
+    full_remap array (size = input space) that maps every index — including
+    removed isomorphic positions — to its output index in [0, n_kept-1].
+    Removed positions are mapped to the output index of their kept partner,
+    so that transform_permutation works correctly for conjugated permutations
+    whose values may reference removed positions.
+    """
     size = next(iter(actions.values())).size
     subset_labels = find_disjoint_subsets(actions)
 
-    # Find isomorphic subsets
+    # Find isomorphic subsets and record the bijection from kept → removed for each pair.
     unique_labels = np.unique(subset_labels)
     isomorphisms: list[list[int]] = []
+    # Maps removed_label → {removed_idx: kept_idx}
+    removed_to_kept: dict[int, dict[int, int]] = {}
 
     for i, label in enumerate(unique_labels):
         subset_idxs = np.where(subset_labels == label)[0]
@@ -173,13 +187,18 @@ def filter_isomorphic_subsets(
                 if label in isomorphism and other_label in isomorphism:
                     break
             else:
-                if has_consistent_bijection(subset_idxs, other_subset_idxs, actions):
+                bijection = get_consistent_bijection(subset_idxs, other_subset_idxs, actions)
+                if bijection is not None:
+                    # bijection: kept_idx → removed_idx; invert to removed_idx → kept_idx
+                    inv = {int(v): int(k) for k, v in bijection.items()}
                     for isomorphism in isomorphisms:
                         if label in isomorphism:
                             isomorphism.append(int(other_label))
+                            removed_to_kept[int(other_label)] = inv
                             break
                     else:
                         isomorphisms.append([int(label), int(other_label)])
+                        removed_to_kept[int(other_label)] = inv
 
     # Remove isomorphisms
     isomorphic_mask = np.ones(size, dtype=bool)
@@ -187,10 +206,25 @@ def filter_isomorphic_subsets(
         for label in isomorphism[1:]:
             isomorphic_mask[subset_labels == label] = False
 
+    # Build full_remap: maps every index in the input space to an output index in [0, n_kept-1].
+    # Kept positions get sequential indices; removed positions are mapped to their kept partner.
+    full_remap = np.empty(size, dtype=np.uint)
+    new_idx = 0
+    kept_output: dict[int, int] = {}
+    for i in range(size):
+        if isomorphic_mask[i]:
+            kept_output[i] = new_idx
+            full_remap[i] = new_idx
+            new_idx += 1
+
+    for inv_bijection in removed_to_kept.values():
+        for removed_idx, kept_idx in inv_bijection.items():
+            full_remap[removed_idx] = kept_output[kept_idx]
+
     # Reindex the actions
     actions = {key: reindex(perm, isomorphic_mask) for key, perm in actions.items()}
 
-    return actions, isomorphic_mask
+    return actions, isomorphic_mask, full_remap
 
 
 def reorder_by_disjoint_subsets(
@@ -224,6 +258,46 @@ def reorder_by_disjoint_subsets(
     pattern = pattern[reorder]
 
     return actions, pattern, subset_sizes, reorder, reorder_inv
+
+
+def get_consistent_bijection(
+    subset_idxs: npt.NDArray[np.int_],
+    other_subset_idxs: npt.NDArray[np.int_],
+    actions: dict[str, PermutationArray],
+) -> dict[int, int] | None:
+    """Return a bijection {kept_idx: removed_idx} if the two subsets are isomorphic, else None."""
+    for other_idx in other_subset_idxs:
+        bijection_map: bidict[int, int] = bidict({int(subset_idxs[0]): int(other_idx)})
+        consistent = True
+
+        for permutation in actions.values():
+            if not consistent:
+                break
+
+            new_bijection_map: bidict[int, int] = bidict()
+
+            for from_idx, to_idx in bijection_map.items():
+                new_from_idx = int(permutation[from_idx])
+                new_to_idx = int(permutation[to_idx])
+
+                if new_from_idx not in bijection_map:
+                    if new_to_idx in bijection_map.values():
+                        consistent = False
+                        break
+                    new_bijection_map[new_from_idx] = new_to_idx
+                elif bijection_map[new_from_idx] != new_to_idx:
+                    consistent = False
+                    break
+
+            if consistent:
+                bijection_map.update(new_bijection_map)
+            else:
+                break
+
+        if consistent:
+            return dict(bijection_map)
+
+    return None
 
 
 def has_consistent_bijection(

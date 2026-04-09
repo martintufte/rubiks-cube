@@ -9,7 +9,10 @@ from rubiks_cube.configuration.enumeration import SearchSide
 from rubiks_cube.configuration.enumeration import SolveStrategy
 from rubiks_cube.configuration.enumeration import Status
 from rubiks_cube.configuration.enumeration import Variant
+from rubiks_cube.move.sequence import MoveSequence
 from rubiks_cube.representation import get_rubiks_cube_permutation
+from rubiks_cube.representation.symmetries import find_variant_group
+from rubiks_cube.representation.utils import conjugate
 from rubiks_cube.solver.actions import get_actions
 from rubiks_cube.solver.bidirectional import BidirectionalSolver
 from rubiks_cube.solver.interface import SearchSummary
@@ -18,9 +21,46 @@ if TYPE_CHECKING:
     from rubiks_cube.move.algorithm import MoveAlgorithm
     from rubiks_cube.move.generator import MoveGenerator
     from rubiks_cube.move.meta import MoveMeta
-    from rubiks_cube.move.sequence import MoveSequence
 
 LOGGER = logging.getLogger(__name__)
+
+
+def _convert_solution_to_rotated_frame(
+    solution: MoveSequence,
+    normal_rotation_moves: list[str],
+    conjugation_map: dict[tuple[str, str], str],
+    inverse_map: dict[str, str],
+) -> MoveSequence:
+    """Convert a solution from the original frame to the rotated frame.
+
+    The scramble has a net rotation g = r1 ∘ r2 ∘ ... ∘ rn. Solution moves found in
+    the de-oriented (original) frame are converted to the rotated frame by applying
+    conjugation with g^-1. Using the composition identity
+    conjugate(M, g^-1) = conjugate(M, rn^-1 ... r1^-1), this is computed iteratively
+    by applying conjugation_map[(M, ri^-1)] for each ri in the original order.
+
+    Args:
+        solution: Solution move sequence in the original (de-oriented) frame.
+        normal_rotation_moves: Rotation moves from the scramble normal part, in order.
+        conjugation_map: Map (move, rotation) -> conjugated move from MoveMeta.
+        inverse_map: Map move -> inverse move from MoveMeta.
+
+    Returns:
+        MoveSequence: Solution expressed in the rotated frame.
+    """
+
+    def convert_move(move: str) -> str:
+        converted = move
+        for rot in normal_rotation_moves:
+            inv_rot = inverse_map[rot]
+            if (converted, inv_rot) in conjugation_map:
+                converted = conjugation_map[(converted, inv_rot)]
+        return converted
+
+    return MoveSequence(
+        normal=[convert_move(move) for move in solution.normal],
+        inverse=[convert_move(move) for move in solution.inverse],
+    )
 
 
 def solve_pattern(
@@ -93,6 +133,13 @@ def solve_pattern(
     pattern = get_patterns(cube_size=move_meta.cube_size).get(goal)
     assert pattern is not None
 
+    # Detect rotation moves in the normal sequence to enable solving from a rotated state.
+    # If present, the permutation is de-oriented (rotations stripped) and solutions are
+    # mapped back to the rotated frame via conjugation after solving.
+    normal_rotation_moves = [move for move in sequence.normal if move in move_meta.rotation_moves]
+
+    has_rotation = bool(normal_rotation_moves)
+
     if goal_sequence is not None:
         inverse_goal_permutation = get_rubiks_cube_permutation(
             sequence=goal_sequence,
@@ -106,6 +153,7 @@ def solve_pattern(
         sequence=sequence,
         initial_permutation=inverse_goal_permutation,
         move_meta=move_meta,
+        orientate_after=has_rotation,
     )
 
     if solve_strategy is SolveStrategy.normal:
@@ -131,16 +179,40 @@ def solve_pattern(
             if remaining_time <= 0:
                 break
 
+            # Rotate permutation and pattern to the canonical variant frame.
+            # All variants in a group share the same canonical pattern, enabling
+            # the inverse frontier to be persisted across variants later.
+            if variant is Variant.none:
+                r_v_moves: list[str] = []
+                canonical_variant = variant
+            else:
+                variant_group = find_variant_group(variant)
+                canonical_variant = next(k for k, v in variant_group.items() if not v)
+                r_v_moves = variant_group[variant]
+
+            if r_v_moves:
+                LOGGER.debug(
+                    f"Variant '{variant.value}' -> canonical '{canonical_variant.value}' "
+                    f"via rotation {r_v_moves}"
+                )
+                r_v_perm = get_rubiks_cube_permutation(
+                    sequence=MoveSequence(normal=r_v_moves),
+                    move_meta=move_meta,
+                )
+                solve_permutation = conjugate(permutation, r_v_perm)
+            else:
+                solve_permutation = permutation
+
             solver = BidirectionalSolver.from_actions_and_pattern(
                 actions=actions,
-                pattern=pattern[variant],
+                pattern=pattern[canonical_variant],
                 validator=pattern.validator,
                 optimize_indices=True,
                 debug=True,
             )
 
             pattern_summary = solver.search(
-                permutation=permutation,
+                permutation=solve_permutation,
                 max_solutions=max_solutions,
                 min_search_depth=min_search_depth,
                 max_search_depth=max_search_depth,
@@ -156,13 +228,38 @@ def solve_pattern(
             if len(pattern_summary.solutions) == 0:
                 continue
 
-            all_solutions.extend(pattern_summary.solutions)
+            # Convert solutions from canonical frame back to the variant frame.
+            variant_solutions = pattern_summary.solutions
+            if r_v_moves:
+                variant_solutions = [
+                    _convert_solution_to_rotated_frame(
+                        solution=solution,
+                        normal_rotation_moves=r_v_moves,
+                        conjugation_map=move_meta.conjugation_map,
+                        inverse_map=move_meta.inverse_map,
+                    )
+                    for solution in variant_solutions
+                ]
+
+            all_solutions.extend(variant_solutions)
 
     unique_solutions = {str(solution): solution for solution in all_solutions}
     solutions = sorted(
         unique_solutions.values(),
         key=lambda solution: (len(solution), str(solution)),
     )[:max_solutions]
+
+    # Convert solutions from the de-oriented (original) frame back to the rotated frame
+    if has_rotation:
+        solutions = [
+            _convert_solution_to_rotated_frame(
+                solution=solution,
+                normal_rotation_moves=normal_rotation_moves,
+                conjugation_map=move_meta.conjugation_map,
+                inverse_map=move_meta.inverse_map,
+            )
+            for solution in solutions
+        ]
 
     search_summary = SearchSummary(
         solutions=solutions,
