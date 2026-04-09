@@ -20,6 +20,7 @@ dependencies = [
     "ruff>=0.7.3",
     "ty>=0.0.1a23",
     "pytest>=8.3.2",
+    "cattrs>=26.1.0",
 ]
 
 [project.optional-dependencies]
