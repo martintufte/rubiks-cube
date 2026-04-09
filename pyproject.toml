@@ -1,6 +1,6 @@
 [project]
 name = "rubiks-cube"
-version = "0.5.5"
+version = "0.6.0"
 description = "Rubik's Cube Solver and Analytics Engine."
 authors = [
     { name = "Tufte, Martin Gudahl" }
