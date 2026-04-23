@@ -378,12 +378,9 @@ def app(
 
         # Add solve controls
         col_solve, col_beam_build, col_beam_solve, col_clear = st.columns([2, 2, 2, 1])
-        col_solve, col_beam_build, col_beam_solve, col_clear = st.columns([2, 2, 2, 1])
 
         with col_solve:
             solve_clicked = st.button("Solve", type="primary", width="stretch")
-        with col_beam_build:
-            beam_build_clicked = st.button("Build", type="secondary", width="stretch")
         with col_beam_build:
             beam_build_clicked = st.button("Build", type="secondary", width="stretch")
         with col_beam_solve:
@@ -396,11 +393,6 @@ def app(
             )
         with col_clear:
             clear_clicked = st.button("Clear", type="secondary", width="stretch")
-
-        if contexts_built:
-            st.caption(f"Solver built for plan: **{beam_plan_name}**")
-        else:
-            st.caption("No solver built yet — click **Build** first.")
 
         if contexts_built:
             st.caption(f"Solver built for plan: **{beam_plan_name}**")
