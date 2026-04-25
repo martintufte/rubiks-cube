@@ -6,15 +6,40 @@ from typing import TypeVar
 
 import attrs
 
+from rubiks_cube.beam_search.solver import CompiledStep
+from rubiks_cube.transform.pipeline import Pipeline
+
 if TYPE_CHECKING:
     from pathlib import Path
 
     import cattrs
 
-    from rubiks_cube.beam_search.solver import CompiledStep
-    from rubiks_cube.transform.pipeline import Pipeline
-
 T = TypeVar("T")
+
+SCHEMA_VERSION = 1
+
+
+def _save_json(path: Path, data: object) -> None:
+    path.parent.mkdir(parents=True, exist_ok=True)
+    payload = {"schema_version": SCHEMA_VERSION, "data": data}
+    path.write_text(json.dumps(payload, indent=2))
+
+
+def _load_json(path: Path) -> object:
+    payload = json.loads(path.read_text())
+    if not isinstance(payload, dict) or "schema_version" not in payload:
+        raise ValueError(
+            f"Missing schema_version in {path}. "
+            "The file may be from an older version. Delete it and rebuild."
+        )
+    stored = payload["schema_version"]
+    if stored != SCHEMA_VERSION:
+        raise ValueError(
+            f"Schema version mismatch in {path}: "
+            f"expected {SCHEMA_VERSION}, got {stored}. "
+            "Delete the file and rebuild."
+        )
+    return payload["data"]
 
 
 @attrs.frozen
@@ -35,11 +60,10 @@ class ResourceHandler:
         return self.resource_dir / "config.json"
 
     def save_config(self, config: object) -> None:
-        data = self.converter.unstructure(config)
-        self.config_path.write_text(json.dumps(data, indent=2))
+        _save_json(self.config_path, self.converter.unstructure(config))
 
     def load_config(self, config_type: type[T]) -> T:
-        data = json.loads(self.config_path.read_text())
+        data = _load_json(self.config_path)
         return self.converter.structure(data, config_type)
 
     @property
@@ -47,13 +71,10 @@ class ResourceHandler:
         return self.resource_dir / "preprocess_pipeline.json"
 
     def save_preprocess_pipeline(self, pipeline: Pipeline) -> None:
-        data = self.converter.unstructure(pipeline)
-        self.pipeline_path.write_text(json.dumps(data, indent=2))
+        _save_json(self.pipeline_path, self.converter.unstructure(pipeline))
 
     def load_preprocess_pipeline(self) -> Pipeline:
-        from rubiks_cube.transform.pipeline import Pipeline  # noqa: PLC0415
-
-        data = json.loads(self.pipeline_path.read_text())
+        data = _load_json(self.pipeline_path)
         return self.converter.structure(data, Pipeline)
 
     @property
@@ -61,11 +82,8 @@ class ResourceHandler:
         return self.resource_dir / "step_contexts.json"
 
     def save_step_contexts(self, contexts: list[CompiledStep]) -> None:
-        data = self.converter.unstructure(contexts)
-        self.step_contexts_path.write_text(json.dumps(data, indent=2))
+        _save_json(self.step_contexts_path, self.converter.unstructure(contexts))
 
     def load_step_contexts(self) -> list[CompiledStep]:
-        from rubiks_cube.beam_search.solver import CompiledStep  # noqa: PLC0415
-
-        data = json.loads(self.step_contexts_path.read_text())
+        data = _load_json(self.step_contexts_path)
         return self.converter.structure(data, list[CompiledStep])
