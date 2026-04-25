@@ -72,10 +72,6 @@ class MoveSteps(Sequence[MoveSequence]):
         """Combine all steps into one move sequence."""
         return sum(self.steps, start=MoveSequence())
 
-    def without_empty(self) -> MoveSteps:
-        """Return only non-empty steps."""
-        return MoveSteps([step for step in self.steps if len(step) > 0])
-
     def with_step(self, step: MoveSequence) -> MoveSteps:
         """Append a new step and return a new instance."""
         return MoveSteps([*self.steps, step])

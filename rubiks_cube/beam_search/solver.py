@@ -95,7 +95,7 @@ class CompiledStep:
     allowed_prev_variants_by_variant: dict[Variant, frozenset[Variant]] | None = None
 
     def transition_prev_variant(self, candidate: BeamCandidate) -> Variant:
-        return candidate.variant_history[self.step.transition.prev_goal_ref.value]
+        return candidate.variant_history[self.step.transition.prev_goal_ref]
 
     def contexts_for_prev_variant(self, prev_variant: Variant) -> list[CompiledVariant]:
         generator = self.step.transition.generator_map.get(prev_variant)

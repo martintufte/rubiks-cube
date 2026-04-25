@@ -10,7 +10,6 @@ from cattrs.strategies import configure_tagged_union
 from cattrs.strategies import include_subclasses
 
 from rubiks_cube.beam_search.interface import BeamStep
-from rubiks_cube.beam_search.interface import PrevGoalRef
 from rubiks_cube.beam_search.interface import SearchSideChoice
 from rubiks_cube.beam_search.interface import Transition
 from rubiks_cube.configuration.enumeration import Goal
@@ -111,7 +110,7 @@ def create_converter() -> cattrs.Converter:
             "allowed_variants_by_prev_variant": _unstructure_variant_frozenset_dict(
                 t.allowed_variants_by_prev_variant
             ),
-            "prev_goal_ref": t.prev_goal_ref.value,
+            "prev_goal_ref": t.prev_goal_ref,
             "check_contained": t.check_contained,
         }
 
@@ -126,7 +125,7 @@ def create_converter() -> cattrs.Converter:
             allowed_variants_by_prev_variant=_structure_variant_frozenset_dict(
                 data.get("allowed_variants_by_prev_variant")
             ),
-            prev_goal_ref=PrevGoalRef(raw_ref),
+            prev_goal_ref=int(raw_ref),
             check_contained=data.get("check_contained", False),
         )
 
