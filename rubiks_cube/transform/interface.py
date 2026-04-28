@@ -7,7 +7,7 @@ from typing import TYPE_CHECKING
 import attrs
 
 if TYPE_CHECKING:
-    from typing import Callable
+    from collections.abc import Callable
 
     from rubiks_cube.configuration.types import BoolArray
     from rubiks_cube.configuration.types import PatternArray

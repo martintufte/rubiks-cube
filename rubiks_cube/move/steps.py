@@ -50,8 +50,7 @@ class MoveSteps(Sequence[MoveSequence]):
         raise IndexError("Invalid index provided for MoveSteps.")
 
     def __iter__(self) -> Iterator[MoveSequence]:
-        for step in self.steps:
-            yield step
+        yield from self.steps
 
     def __bool__(self) -> bool:
         return bool(self.steps)

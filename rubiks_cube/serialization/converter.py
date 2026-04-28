@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import importlib
 import pkgutil
-from typing import Sequence
+from typing import TYPE_CHECKING
 
 import cattrs
 import numpy as np
@@ -19,6 +19,9 @@ from rubiks_cube.solver.bidirectional import BidirectionalSolver
 from rubiks_cube.solver.validators import VALIDATOR_REGISTRY
 from rubiks_cube.transform.interface import Transform
 from rubiks_cube.transform.pipeline import Pipeline
+
+if TYPE_CHECKING:
+    from collections.abc import Sequence
 
 
 def import_all_submodules(
@@ -95,7 +98,7 @@ def create_converter() -> cattrs.Converter:
     include_subclasses(Transform, converter, union_strategy=configure_tagged_union)
 
     # MoveGenerator: encode as its canonical string "<U, R, ...>"
-    converter.register_unstructure_hook(MoveGenerator, lambda g: str(g))
+    converter.register_unstructure_hook(MoveGenerator, str)
     converter.register_structure_hook(MoveGenerator, lambda data, _: MoveGenerator.from_str(data))
 
     # ---------- beam_search types ----------------------------------------
